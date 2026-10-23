@@ -1,0 +1,1594 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lead Diary">
+<meta name="theme-color" content="#F4F5F8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B0D12" media="(prefers-color-scheme: dark)">
+<meta name="description" content="Every lead, every conversation, every follow-up.">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}body{margin:0;font:15px/1.45 system-ui,-apple-system,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Lead Diary</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Sora:wght@500;600;700&display=swap">
+<style>
+/* Layout: phone-first app shell. Bottom tab bar on phone, left rail on laptop. Lead opens as a full-screen sheet (side panel on laptop). */
+:root{
+  --bg:#F4F5F8; --surface:#FFFFFF; --surface-2:#EEF0F5; --line:#E2E5EC;
+  --ink:#0E1525; --ink-2:#596276; --ink-3:#8C94A5;
+  --accent:#3355E0; --accent-soft:#E9EDFD; --accent-ink:#FFFFFF;
+  --red:#C93636; --red-soft:#FCEAEA; --amber:#B86E00; --amber-soft:#FFF2D9;
+  --green:#12804A; --green-soft:#E2F4E9; --wa:#1DA851;
+  --c1:#2a78d6; --c2:#eb6834; --c3:#1baf7a; --c4:#eda100; --c5:#e87ba4; --c6:#008300; --c7:#6250d6; --c8:#e34948; --c0:#8C94A5;
+  --shadow:0 1px 2px rgba(14,21,37,.05),0 4px 16px rgba(14,21,37,.05);
+  --display:"Sora",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  --body:"Manrope",ui-sans-serif,system-ui,-apple-system,sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0B0D12; --surface:#151821; --surface-2:#1D212B; --line:#282D39;
+  --ink:#ECEFF5; --ink-2:#A4ACBB; --ink-3:#6E7787;
+  --accent:#7B93FF; --accent-soft:#1F2748; --accent-ink:#0B0D12;
+  --red:#FF7B73; --red-soft:#3A1C1C; --amber:#F2B44A; --amber-soft:#3A2C12;
+  --green:#52D18D; --green-soft:#14301F; --wa:#25C462;
+  --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500; --c5:#d55181; --c6:#008300; --c7:#9085e9; --c8:#e66767; --c0:#6E7787;
+  --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B0D12; --surface:#151821; --surface-2:#1D212B; --line:#282D39;
+  --ink:#ECEFF5; --ink-2:#A4ACBB; --ink-3:#6E7787;
+  --accent:#7B93FF; --accent-soft:#1F2748; --accent-ink:#0B0D12;
+  --red:#FF7B73; --red-soft:#3A1C1C; --amber:#F2B44A; --amber-soft:#3A2C12;
+  --green:#52D18D; --green-soft:#14301F; --wa:#25C462;
+  --c1:#3987e5; --c2:#d95926; --c3:#199e70; --c4:#c98500; --c5:#d55181; --c6:#008300; --c7:#9085e9; --c8:#e66767; --c0:#6E7787;
+  --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.num{font-variant-numeric:tabular-nums}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;letter-spacing:-.015em}
+
+/* shell */
+.shell{max-width:1180px;margin:0 auto}
+main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px calc(96px + env(safe-area-inset-bottom,0px));min-width:0}
+.view{display:flex;flex-direction:column;gap:16px;max-width:760px;margin:0 auto}
+.view.wide{max-width:none}
+body.kb nav.tabs{display:none}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:15;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--line);
+  display:grid;grid-template-columns:repeat(5,1fr);align-items:center;
+  padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+.tab{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:600;color:var(--ink-3);padding:6px 0}
+.tab[aria-current="page"]{color:var(--accent)}
+.tab svg.i{width:23px;height:23px}
+.fab{justify-self:center;width:52px;height:52px;border-radius:18px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;box-shadow:0 6px 18px color-mix(in srgb,var(--accent) 40%,transparent)}
+.fab svg.i{width:26px;height:26px;stroke-width:2.2}
+nav.tabs .rail-brand,nav.tabs .rail-new{display:none}
+@media (min-width:900px){
+  body.kb nav.tabs{display:flex}
+  .shell{display:grid;grid-template-columns:232px 1fr;gap:0}
+  nav.tabs{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;align-items:stretch;gap:4px;border-top:0;border-right:1px solid var(--line);background:var(--surface);padding:22px 14px;backdrop-filter:none}
+  nav.tabs .rail-brand{display:block;font-family:var(--display);font-weight:700;font-size:20px;padding:0 10px 18px}
+  nav.tabs .rail-new{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:14px}
+  .tab{flex-direction:row;gap:12px;font-size:14px;padding:10px 12px;border-radius:10px;color:var(--ink-2)}
+  .tab[aria-current="page"]{background:var(--accent-soft);color:var(--accent)}
+  .tab svg.i{width:20px;height:20px}
+  .fab{display:none}
+  main{padding-block:28px 60px}
+}
+
+/* generic */
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.top h1{font-size:26px;font-weight:700}
+.sub{color:var(--ink-2);font-size:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.pad{padding:16px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:40px;padding:0 14px;border-radius:11px;font-weight:600;font-size:14px;background:var(--surface-2);color:var(--ink);white-space:nowrap}
+.btn:hover{filter:brightness(.97)}
+a.btn,a.wa-mini{text-decoration:none}
+.btn.primary{background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent;color:var(--ink-2)}
+.btn.wa{background:var(--wa);color:#fff}
+.btn.danger{color:var(--red);background:var(--red-soft)}
+.btn.sm{height:32px;padding:0 11px;font-size:13px;border-radius:9px}
+.btn.icon{width:40px;padding:0}
+.btn[disabled]{opacity:.55;pointer-events:none}
+.btn.ai{background:var(--accent-soft);color:var(--accent)}
+.label{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.muted{color:var(--ink-3)}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.chips::-webkit-scrollbar{display:none}
+.chips.wrap{flex-wrap:wrap;overflow:visible}
+.chip{flex:none;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:99px;border:1px solid var(--line);background:var(--surface);font-size:13px;font-weight:600;color:var(--ink-2)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--c0)}
+.input,.select,textarea.input{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:11px;padding:10px 12px;font-size:16px;min-height:44px}
+textarea.input{resize:vertical;min-height:96px;line-height:1.45}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field > span{font-size:13px;font-weight:600;color:var(--ink-2)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:520px){.grid2{grid-template-columns:1fr}}
+.empty{text-align:center;padding:34px 18px;color:var(--ink-2)}
+.empty h3{font-size:17px;color:var(--ink);margin-bottom:4px}
+.empty .btn{margin-top:14px}
+
+/* status pills */
+.pill{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:99px;font-size:12px;font-weight:700;white-space:nowrap;background:var(--surface-2);color:var(--ink-2)}
+.pill.st-new{background:var(--accent-soft);color:var(--accent)}
+.pill.st-interested,.pill.st-demo,.pill.st-proposal{background:var(--amber-soft);color:var(--amber)}
+.pill.st-hold{background:var(--surface-2);color:var(--ink-2)}
+.pill.st-won{background:var(--green-soft);color:var(--green)}
+.pill.st-lost{background:var(--surface-2);color:var(--ink-3)}
+.temp{font-size:12px;font-weight:700}
+.temp.hot{color:var(--red)} .temp.warm{color:var(--amber)} .temp.cold{color:var(--accent)}
+
+/* summary strip */
+.strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stat{padding:12px 14px;text-align:left;display:flex;flex-direction:column;gap:2px}
+.stat b{font-family:var(--display);font-size:24px;font-weight:700;line-height:1.15}
+.stat span{font-size:12.5px;color:var(--ink-2);font-weight:600}
+.stat.red b{color:var(--red)} .stat.amber b{color:var(--amber)} .stat.blue b{color:var(--accent)}
+@media (max-width:520px){.strip{grid-template-columns:repeat(2,1fr)}}
+
+/* lead rows */
+.group{display:flex;flex-direction:column;gap:8px}
+.group-h{display:flex;align-items:center;gap:8px;padding:0 4px}
+.group-h h2{font-size:14px;font-weight:600;font-family:var(--body);letter-spacing:0}
+.group-h .n{font-size:12px;font-weight:700;color:var(--ink-3)}
+.group-h .bar{width:4px;height:14px;border-radius:2px;background:var(--ink-3)}
+.group.over .bar{background:var(--red)} .group.today .bar{background:var(--amber)} .group.noplan .bar{background:var(--accent)}
+.rows{overflow:hidden}
+.row{display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center;padding:12px 14px;border-top:1px solid var(--line);width:100%;text-align:left}
+.row:first-child{border-top:0}
+.row:hover{background:var(--surface-2)}
+.av{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-weight:700;font-size:14px;color:#fff;background:var(--c0)}
+.row .mid{min-width:0;display:flex;flex-direction:column;gap:1px}
+.row .nm{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .co{font-size:13px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .last{font-size:13px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .rt{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.due{font-size:12px;font-weight:700;color:var(--ink-2);white-space:nowrap}
+.due.over{color:var(--red)} .due.today{color:var(--amber)}
+.wa-mini{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;color:var(--wa);background:color-mix(in srgb,var(--wa) 12%,transparent)}
+.wa-mini svg.i{width:18px;height:18px}
+
+/* AI box */
+.aibox{padding:14px 16px;display:flex;flex-direction:column;gap:10px;border-color:color-mix(in srgb,var(--accent) 30%,var(--line))}
+.aibox .out{white-space:pre-wrap;font-size:14px;line-height:1.55}
+.aibox .head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.aibox .head b{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--accent)}
+.banner{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:12px 14px;font-size:14px;flex-wrap:wrap}
+
+/* toolbar */
+.toolbar{display:flex;flex-direction:column;gap:10px}
+.searchbox{position:relative}
+.searchbox svg{position:absolute;left:12px;top:12px;color:var(--ink-3)}
+.searchbox input{padding-left:40px}
+
+/* sheet */
+.scrim{position:fixed;inset:0;z-index:30;background:rgba(8,12,22,.4);display:flex;justify-content:flex-end}
+.sheet{background:var(--bg);width:100%;height:100%;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column}
+@media (min-width:700px){.sheet{width:560px;box-shadow:-10px 0 40px rgba(0,0,0,.18)}}
+.sheet-bar{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:8px;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  padding:calc(10px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 10px max(12px,env(safe-area-inset-left,0px))}
+.sheet-bar h3{font-size:16px;font-weight:600}
+.sheet-body{display:flex;flex-direction:column;gap:14px;padding:4px max(16px,env(safe-area-inset-right,0px)) calc(40px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .22s cubic-bezier(.2,.8,.2,1)}@keyframes up{from{transform:translateY(24px);opacity:.4}}
+  @media (min-width:700px){.sheet{animation:side .22s cubic-bezier(.2,.8,.2,1)}@keyframes side{from{transform:translateX(30px);opacity:.4}}}}
+.hero{display:flex;gap:14px;align-items:center}
+.hero .av{width:56px;height:56px;border-radius:16px;font-size:20px}
+.hero h2{font-size:22px;font-weight:700;overflow-wrap:anywhere}
+.hero .co{color:var(--ink-2);font-size:14px}
+.meta-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.select-pill{appearance:none;-webkit-appearance:none;border:0;border-radius:99px;height:34px;padding:0 30px 0 13px;font-size:16px;font-weight:700;
+  background:var(--surface-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%238C94A5' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 11px center}
+.actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.actions .btn{height:46px}
+.phone-line{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:15px}
+.phone-line .num{user-select:all;-webkit-user-select:all;font-weight:600;font-size:16px}
+.fu{display:flex;flex-direction:column;gap:10px}
+.fu-when{display:flex;align-items:center;gap:10px}
+.fu-when b{font-family:var(--display);font-size:18px}
+.cal-state{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-3)}
+.cal-state.ok{color:var(--green)} .cal-state.err{color:var(--red)}
+.cal-state svg.i{width:15px;height:15px}
+.composer{display:flex;flex-direction:column;gap:10px}
+.mic-wrap{position:relative}
+.mic-wrap textarea{padding-right:52px}
+.mic.rec{background:var(--red);color:#fff;animation:micpulse 1.2s ease-in-out infinite}
+@keyframes micpulse{50%{box-shadow:0 0 0 7px color-mix(in srgb,var(--red) 22%,transparent)}}
+@media (prefers-reduced-motion:reduce){.mic.rec{animation:none}}
+.mic{position:absolute;right:8px;top:8px;width:38px;height:38px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center}
+.hint{font-size:13px;color:var(--ink-2);background:var(--accent-soft);border-radius:10px;padding:8px 12px}
+.split{display:flex;gap:8px}
+.split .btn{flex:1;height:44px}
+.timeline{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.timeline li{display:grid;grid-template-columns:14px 1fr;gap:12px;position:relative;padding-bottom:16px}
+.timeline li::before{content:"";position:absolute;left:6px;top:16px;bottom:0;width:2px;background:var(--line)}
+.timeline li:last-child::before{display:none}
+.timeline .pt{width:14px;height:14px;border-radius:50%;border:3px solid var(--accent);background:var(--surface);margin-top:3px}
+.timeline .th{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:13px}
+.timeline .th b{font-size:14px}
+.timeline p{margin:3px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.timeline details{margin-top:4px;font-size:13px;color:var(--ink-3)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:8px 16px;font-size:14px}
+.kv dt{color:var(--ink-3);font-weight:600}
+.kv dd{margin:0;overflow-wrap:anywhere}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(88px + env(safe-area-inset-bottom,0px));z-index:50;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;font-weight:600;max-width:calc(100% - 32px);box-shadow:0 8px 24px rgba(0,0,0,.2)}
+@media (min-width:900px){.toast{bottom:28px}}
+body.sheet-open .toast{bottom:auto;top:calc(64px + env(safe-area-inset-top,0px))}
+#dupe:empty{display:none}
+.seg{display:inline-flex;background:var(--surface-2);border-radius:10px;padding:3px;gap:2px}
+.seg button{height:30px;padding:0 12px;border-radius:8px;font-size:13px;font-weight:600;color:var(--ink-2)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+
+/* settings */
+.set-sec{display:flex;flex-direction:column;gap:10px}
+.set-sec > h2{font-size:15px;font-weight:600;font-family:var(--body);padding:0 4px;letter-spacing:0}
+.set-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--line);min-height:56px}
+.set-row:first-child{border-top:0}
+.set-row .grow{flex:1;min-width:0}
+.set-row .t{font-weight:600}
+.set-row .d{font-size:13px;color:var(--ink-3)}
+.cat-name{border:0;background:transparent;font-weight:600;width:100%;padding:4px 0;font-size:16px}
+.star{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:var(--ink-3)}
+.star[aria-pressed="true"]{color:var(--amber);background:var(--amber-soft)}
+.star[aria-pressed="true"] svg{fill:currentColor}
+.switch{position:relative;width:46px;height:28px;flex:none}
+.switch input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.switch span{position:absolute;inset:0;border-radius:99px;background:var(--line);transition:background .15s}
+.switch span::after{content:"";position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .15s}
+.switch input:checked + span{background:var(--green)}
+.switch input:checked + span::after{transform:translateX(18px)}
+.switch input:focus-visible + span{outline:2px solid var(--accent);outline-offset:2px}
+
+/* dashboard */
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+@media (min-width:1100px){.kpis{grid-template-columns:repeat(6,1fr)}}
+@media (max-width:520px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{padding:14px;display:flex;flex-direction:column;gap:4px}
+.kpi .k{font-size:12.5px;font-weight:600;color:var(--ink-2)}
+.kpi .v{font-family:var(--display);font-size:26px;font-weight:700;line-height:1.1}
+.kpi .s{font-size:12px;color:var(--ink-3)}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.dash-grid > *{min-width:0}
+.dash-grid .full{grid-column:1/-1}
+@media (max-width:820px){.dash-grid{grid-template-columns:1fr}}
+.chart{padding:16px;display:flex;flex-direction:column;gap:12px}
+.chart h3{font-size:15px;font-weight:600}
+.chart .cap{font-size:12.5px;color:var(--ink-3);margin-top:-8px}
+.vbars{display:grid;align-items:end;gap:4px;height:150px;border-bottom:1px solid var(--line);position:relative}
+.vbars .col{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;position:relative}
+.vbars .b{width:100%;max-width:26px;background:var(--accent);border-radius:4px 4px 0 0;min-height:0}
+.vbars .b.zero{background:transparent}
+.vbars .lab{position:absolute;top:-18px;font-size:11px;font-weight:700;color:var(--ink-2)}
+.xlabels{display:grid;gap:4px;font-size:10.5px;color:var(--ink-3);text-align:center;margin-top:-6px}
+.hbars{display:flex;flex-direction:column;gap:9px}
+.hbar{display:grid;grid-template-columns:minmax(80px,32%) 1fr 36px;gap:10px;align-items:center;font-size:13px}
+.hbar .n{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
+.hbar .track,.hbar .fill{display:block}
+.hbar .track{height:12px;background:var(--surface-2);border-radius:0 4px 4px 0;overflow:hidden}
+.hbar .fill{height:100%;border-radius:0 4px 4px 0;background:var(--accent)}
+.hbar .c{text-align:right;font-weight:700}
+.stack{display:flex;height:10px;gap:2px;border-radius:4px;overflow:hidden;background:var(--surface-2);min-width:60px}
+.stack i{display:block;height:100%}
+.tbl-wrap{overflow-x:auto}
+table.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
+.tbl th{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);text-align:right;font-weight:700;padding:6px 8px;border-bottom:1px solid var(--line)}
+.tbl td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
+.tbl th:first-child,.tbl td:first-child{text-align:left}
+.tbl tr:last-child td{border-bottom:0}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+/* today hero */
+.hero-today{padding:18px;display:flex;flex-direction:column;gap:16px}
+.ht-top{display:flex;justify-content:space-between;align-items:center;gap:14px}
+.ht-top h1{font-size:26px;font-weight:700}
+.ring{position:relative;width:76px;height:76px;flex:none}
+.ring svg{width:76px;height:76px;transform:rotate(-90deg)}
+.ring .rv{position:absolute;inset:0;display:grid;place-items:center;text-align:center;line-height:1.05}
+.ring .rv b{font-family:var(--display);font-size:18px}
+.ring .rv span{display:block;font-size:10px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em}
+.mini{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);padding-top:12px}
+.mini > *{display:flex;flex-direction:column;gap:1px;padding:0 10px;border-left:1px solid var(--line);text-align:left}
+.mini > *:first-child{border-left:0;padding-left:0}
+.mini b{font-family:var(--display);font-size:20px;line-height:1.2}
+.mini span{font-size:12px;color:var(--ink-2);font-weight:600;white-space:nowrap}
+.mini .red b{color:var(--red)} .mini .amber b{color:var(--amber)} .mini .blue b{color:var(--accent)}
+@media (max-width:380px){.mini span{font-size:11px}.mini > *{padding:0 6px}}
+/* sheet dock */
+.dock{position:sticky;bottom:0;z-index:2;display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:8px;margin-top:auto;
+  background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);
+  padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.dock .btn{height:48px;font-size:15px}
+.recency{font-size:13px;color:var(--ink-3)}
+.dupe.soft{background:var(--surface-2);color:var(--ink-2);font-weight:500}
+.dupe{flex-wrap:wrap}
+.linkish{color:var(--accent);font-weight:700;text-decoration:underline;text-underline-offset:2px}
+#dupe{display:flex;flex-direction:column;gap:8px}
+.dupe{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:11px;background:var(--amber-soft);color:var(--amber);font-size:14px;font-weight:600}
+details.more > summary{cursor:pointer;list-style:none;font-weight:600;color:var(--accent);font-size:14px;display:flex;align-items:center;gap:6px}
+details.more > summary::-webkit-details-marker{display:none}
+details.more[open] > summary{margin-bottom:14px}
+.quick{display:flex;gap:8px;flex-wrap:wrap}
+.ask{display:flex;gap:8px}
+.ask .input{flex:1}
+.ask-out .names{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+@media (max-width:520px){.kpi{padding:12px}.kpi .v{font-size:22px}}
+.prio-tag{display:inline-block;margin-left:6px;padding:0 7px;border-radius:99px;font-size:11px;font-weight:700;line-height:18px;background:var(--red-soft);color:var(--red);vertical-align:2px}
+.prio-box{display:flex;flex-direction:column;gap:8px}
+.prio-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.prio-why{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2)}
+.pdot{width:9px;height:9px;border-radius:50%;flex:none}
+.pdot.high{background:var(--red)} .pdot.medium{background:var(--amber)} .pdot.low{background:var(--ink-3)}
+.req-card{display:flex;flex-direction:column;gap:10px}
+.req-head{display:flex;align-items:center;gap:10px}
+.req-head .label{flex:1}
+.req-meter{font-size:12.5px;font-weight:700;color:var(--ink-2)}
+.meter{height:6px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.meter i{display:block;height:100%;border-radius:99px;background:var(--green)}
+.req-sum{margin:0;font-weight:600;font-size:15px}
+.req-details{white-space:pre-wrap;font-size:14px;line-height:1.5;background:var(--surface-2);border-radius:10px;padding:10px 12px;overflow-wrap:anywhere}
+.req-missing{font-size:13px;color:var(--amber);background:var(--amber-soft);border-radius:10px;padding:8px 12px}
+.chip.static{cursor:default;background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.cat-mods{border:0;background:transparent;width:100%;padding:2px 0;font-size:16px;color:var(--ink-2)}
+.cat-mods::placeholder{color:var(--ink-3)}
+#auth{position:fixed;inset:0;z-index:100;background:var(--bg);display:grid;place-items:center;padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px));overflow-y:auto}
+.auth-card{width:min(400px,100%);padding:28px 22px;display:flex;flex-direction:column;gap:16px}
+.auth-card h1{font-size:24px}
+.auth-err{color:var(--red);min-height:1.2em;margin:0;font-size:14px;font-weight:600}
+body.auth-open .shell,body.auth-open #sheetRoot{display:none}
+#tip{position:fixed;z-index:60;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12.5px;font-weight:600;padding:6px 9px;border-radius:8px;white-space:nowrap;transform:translate(-50%,calc(-100% - 10px))}
+</style>
+<script src="/runtime.js"></script>
+</head>
+<body>
+<div id="auth" hidden>
+  <form id="authForm" class="card auth-card" autocomplete="on">
+    <img src="/icons/icon-192.png" alt="" width="64" height="64" style="border-radius:16px">
+    <div><h1 id="authTitle">Welcome back</h1><p class="sub" id="authSub" style="margin:4px 0 0">Sign in to see your leads.</p></div>
+    <input type="text" name="username" value="owner" autocomplete="username" hidden>
+    <label class="field" id="authSetup" hidden><span>Setup code</span><input class="input num" id="authCode" inputmode="numeric" autocomplete="one-time-code" placeholder="6-digit code from the install"></label>
+    <label class="field"><span>Password</span><input class="input" id="authPw" type="password" required minlength="8"></label>
+    <p class="auth-err" id="authErr" role="alert"></p>
+    <button class="btn primary" id="authBtn" type="submit" style="height:48px">Sign in</button>
+  </form>
+</div>
+<div class="shell">
+  <nav class="tabs" aria-label="Main">
+    <div class="rail-brand">Lead Diary</div>
+    <button class="btn primary rail-new" data-new>+ New lead</button>
+    <button class="tab" data-tab="today"></button>
+    <button class="tab" data-tab="leads"></button>
+    <button class="fab" data-new aria-label="New lead"></button>
+    <button class="tab" data-tab="dash"></button>
+    <button class="tab" data-tab="prefs"></button>
+  </nav>
+  <main id="main"></main>
+</div>
+<div id="sheetRoot"></div>
+<div id="toastRoot"></div>
+<div id="tip" hidden></div>
+
+<script>
+/* ============ constants ============ */
+const STATUSES=[
+  {id:"new",label:"New"},{id:"contacted",label:"Contacted"},{id:"interested",label:"Interested"},
+  {id:"demo",label:"Demo"},{id:"proposal",label:"Proposal"},{id:"hold",label:"On hold"},{id:"won",label:"Won"},{id:"lost",label:"Lost"}];
+const OPEN=s=>s!=="won"&&s!=="lost";
+const NOTE_TYPES=["Call","WhatsApp","Meeting","Email","No answer","Note"];
+const TEMPS=[{id:"hot",label:"Hot"},{id:"warm",label:"Warm"},{id:"cold",label:"Cold"}];
+const ICONS={
+  today:'<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  leads:'<path d="M8 6h13M8 12h13M8 18h13"/><circle cx="3.5" cy="6" r=".6"/><circle cx="3.5" cy="12" r=".6"/><circle cx="3.5" cy="18" r=".6"/>',
+  dash:'<path d="M4 20V11M10 20V4M16 20v-6M21 20H3"/>',
+  prefs:'<path d="M4 6h9m4 0h3M4 12h3m4 0h9M4 18h11m4 0h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  phone:'<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>',
+  wa:'<path d="M20.5 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.6-4.8A8.5 8.5 0 1 1 20.5 11.5z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 .8a4 4 0 0 1-1.8-1.8l.8-1-1-2z"/>',
+  mic:'<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
+  spark:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 15v4M17 17h4"/>',
+  cal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
+  x:'<path d="M6 6l12 12M18 6 6 18"/>',
+  back:'<path d="M15 18l-6-6 6-6"/>',
+  copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/>',
+  down:'<path d="M12 4v12M7 11l5 5 5-5M4 20h16"/>',
+  trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+  edit:'<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+  check:'<path d="M5 12l5 5 9-10"/>',
+  star:'<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
+  alert:'<circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 16.5v.5"/>',
+};
+const ic=(n,cls="")=>`<svg class="i ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n]}</svg>`;
+
+/* ============ state ============ */
+const DEFAULT_SETTINGS={categories:[],focus:[],focusOnly:false,defaultHour:11,calendar:{enabled:true,reminder:10,duration:15},lastBackupAt:""};
+let leads=[], settings=structuredClone(DEFAULT_SETTINGS), loaded=false;
+let store=null, sample=null, mcp=null, downloads=null;
+let tab="today", openId=null;
+let ui={todayCat:"",q:"",fStatus:"",fCat:"",fPrio:false,fLong:false,sort:"recent",dashPeriod:30,dashCat:""};
+const calErr={};          // leadId -> message, kept for this visit
+let sheetState={id:null,type:"Call",typeTouched:false,next:null};   // survives live re-renders of the lead sheet
+let formDirty=false, closeArmed=false, lastSheetSig="", renderDirty=false, opener=null, loadErr="";
+try{ const t=localStorage.getItem("ld.tab"); if(t) tab=t; }catch{}
+
+/* ============ helpers ============ */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pad=n=>String(n).padStart(2,"0");
+const toLocal=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const dayKey=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"], MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const uid=()=>"L"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const statusLabel=id=>(STATUSES.find(s=>s.id===id)||STATUSES[0]).label;
+const catById=id=>settings.categories.find(c=>c.id===id);
+const catName=id=>catById(id)?.name||"No category";
+const catColor=id=>{const c=catById(id);return c&&c.slot<8?`var(--c${c.slot+1})`:"var(--c0)";};
+const initials=n=>(String(n||"?").trim().split(/\s+/).slice(0,2).map(w=>w[0]).join("")||"?").toUpperCase();
+const inr=v=>v?"₹"+Number(v).toLocaleString("en-IN"):"";
+function timeStr(d){let h=d.getHours(),ap=h>=12?"PM":"AM";h=h%12||12;return `${h}:${pad(d.getMinutes())} ${ap}`;}
+function whenStr(str){
+  if(!str) return ""; const d=new Date(str); if(isNaN(d)) return "";
+  const now=new Date(), t=dayKey(d), tm=new Date(now); tm.setDate(now.getDate()+1);
+  const ys=new Date(now); ys.setDate(now.getDate()-1);
+  if(t===dayKey(now)) return `Today, ${timeStr(d)}`;
+  if(t===dayKey(tm)) return `Tomorrow, ${timeStr(d)}`;
+  if(t===dayKey(ys)) return `Yesterday, ${timeStr(d)}`;
+  const sameYear=d.getFullYear()===now.getFullYear();
+  return `${DAYS[d.getDay()]}, ${d.getDate()} ${MON[d.getMonth()]}${sameYear?"":" "+d.getFullYear()}, ${timeStr(d)}`;
+}
+function agoStr(iso){
+  if(!iso) return ""; const m=(Date.now()-new Date(iso))/6e4;
+  if(m<1) return "just now"; if(m<60) return Math.floor(m)+"m ago"; if(m<1440) return Math.floor(m/60)+"h ago";
+  const d=Math.floor(m/1440); return d===1?"yesterday":d<30?d+"d ago":Math.floor(d/30)+"mo ago";
+}
+const last10=p=>String(p||"").replace(/\D/g,"").slice(-10);
+const normCo=c=>String(c||"").toLowerCase().replace(/\b(pvt|private|ltd|limited|llp|inc|co|company|the|india|pvt\.?ltd)\b/g,"").replace(/[^a-z0-9]/g,"");
+/* groups of existing leads that share a phone number */
+function dupeGroups(){ const m={}; leads.forEach(l=>{const k=last10(l.phone); if(k.length===10)(m[k]=m[k]||[]).push(l);}); return Object.values(m).filter(g=>g.length>1); }
+function dueStr(str){
+  const d=new Date(str), now=new Date(), diff=now-d;
+  if(diff>0){const h=Math.floor(diff/36e5); return h<1?"Due now":h<24?`${h}h overdue`:`${Math.floor(h/24)}d overdue`;}
+  if(dayKey(d)===dayKey(now)) return timeStr(d);
+  const tm=new Date(now); tm.setDate(now.getDate()+1);
+  if(dayKey(d)===dayKey(tm)) return "Tomorrow";
+  return `${d.getDate()} ${MON[d.getMonth()]}${d.getFullYear()!==now.getFullYear()?" "+d.getFullYear():""}`;
+}
+function bucket(l){
+  if(!OPEN(l.status)) return "closed";
+  if(!l.nextAt) return "noplan";
+  const d=new Date(l.nextAt), now=new Date();
+  if(d<now) return "over";
+  if(dayKey(d)===dayKey(now)) return "today";
+  const tm=new Date(now); tm.setDate(now.getDate()+1);
+  if(dayKey(d)===dayKey(tm)) return "tomorrow";
+  return (d-now)<7*864e5?"week":"later";
+}
+function waLink(p){let d=String(p||"").replace(/\D/g,""); if(d.length===10) d="91"+d; if(d.length===11&&d[0]==="0") d="91"+d.slice(1); return d.length>=10?`https://wa.me/${d}`:"";}
+function telLink(p){const d=String(p||"").replace(/[^\d+]/g,""); return d.length>=10?`tel:${d}`:"";}
+function addMonths(d,n){ const day=d.getDate(); d.setDate(1); d.setMonth(d.getMonth()+n); d.setDate(Math.min(day,new Date(d.getFullYear(),d.getMonth()+1,0).getDate())); return d; }
+function quickDate(k){
+  const d=new Date();
+  if(/^m\d+$/.test(k)){ addMonths(d,Number(k.slice(1))); d.setMinutes(Math.round(d.getMinutes()/15)*15,0,0); return toLocal(d); }   // months keep today's time of day
+  if(k==="3h"){d.setHours(d.getHours()+3,0,0,0);}
+  else if(k==="eve"){d.setHours(18,0,0,0); if(d<new Date()) d.setDate(d.getDate()+1);}
+  else {d.setDate(d.getDate()+Number(k)); d.setHours(settings.defaultHour||11,0,0,0);}
+  return toLocal(d);
+}
+function toast(msg){const el=document.createElement("div");el.className="toast";el.setAttribute("role","status");el.textContent=msg;$("#toastRoot").replaceChildren(el);clearTimeout(toast.t);toast.t=setTimeout(()=>el.remove(),2600);}
+function normalize(l){
+  const map={talking:"contacted",hot:"interested"};
+  return {name:"",company:"",phone:"",email:"",category:"",source:"",need:"",value:null,temp:"",status:"new",nextAt:"",notes:[],createdAt:"",updatedAt:"",calEventId:"",...l,status:map[l.status]||l.status||"new"};
+}
+const msgLang=()=>{try{return localStorage.getItem("ld.lang")||"English";}catch{return "English";}};
+const QUICK=()=>[["3h","In 3 hours"],["eve",new Date().getHours()>=18?"Tomorrow evening":"This evening"],["1","Tomorrow"],["2","In 2 days"],["7","Next week"],["m1","1 month"],["m3","3 months"],["m6","6 months"],["m12","Next year"]];
+const strip=l=>{const {id,...r}=l;return r;};
+const lastNote=l=>(l.notes||[])[0];
+/* Priority: what you set > what AI set > automatic score from stage, value, interest, freshness and follow-up timing */
+const PRIOS=[{id:"high",label:"High"},{id:"medium",label:"Medium"},{id:"low",label:"Low"}];
+const PRANK={high:0,medium:1,low:2};
+function autoPrio(l){
+  if(!OPEN(l.status)) return {level:"low",score:0,why:["Closed"]};
+  const why=[]; let s={new:12,contacted:15,interested:25,demo:35,proposal:40,hold:2}[l.status]??10;
+  if(l.status==="hold") why.push("On hold until the follow-up date");
+  if(l.nextAt&&new Date(l.nextAt)-Date.now()>30*864e5){ s-=10; why.push("Next talk is over a month away"); }
+  if(["demo","proposal"].includes(l.status)) why.push(statusLabel(l.status)+" stage");
+  const v=Number(l.value)||0; if(v){ const add=Math.min(25,Math.round(Math.log10(v/10000+1)*15)); s+=add; if(add>=12) why.push(inr(v)+" deal"); }
+  const touched=(l.notes||[]).some(n=>n.type!=="First message");
+  if(!touched&&Date.now()-new Date(l.createdAt)<48*36e5){ s+=20; why.push("New lead, not contacted yet"); }
+  if(l.temp==="hot"){s+=20;why.push("Hot interest");} else if(l.temp==="warm") s+=8; else if(l.temp==="cold"){s-=12;why.push("Cold interest");}
+  if(bucket(l)==="over"){s+=10;why.push("Follow-up missed");}
+  const ln=lastNote(l); if(ln&&Date.now()-new Date(ln.at)>14*864e5){s-=8;why.push("No contact for 2+ weeks");}
+  if(settings.focus.includes(l.category)){s+=5;why.push("Starred category");}
+  s=Math.max(0,Math.min(100,s));
+  return {level:s>=55?"high":s>=30?"medium":"low",score:s,why};
+}
+const isLong=l=>OPEN(l.status)&&(l.status==="hold"||(l.nextAt&&new Date(l.nextAt)-Date.now()>30*864e5));
+const prioOf=l=>l.prio&&PRANK[l.prio]!==undefined?l.prio:autoPrio(l).level;
+const prioSource=l=>l.prio?(l.prioBy==="ai"?"ai":"you"):"auto";
+function prioReason(l){
+  if(l.prio&&l.prioBy!=="ai") return "Set by you";
+  if(l.prio) return "AI: "+(l.prioWhy||"based on the conversation");
+  const w=autoPrio(l).why; return "Auto: "+(w.length?w.slice(0,3).join(" · "):"no strong signals yet");
+}
+const prioRankOf=l=>PRANK[prioOf(l)]*1000-autoPrio(l).score;   // sort key: level first, then score
+const byPrioThen=f=>(a,b)=>(PRANK[prioOf(a)]-PRANK[prioOf(b)])||f(a,b);
+/* ---- requirements ---- */
+const REQ_FIELDS=[["users","Users","e.g. 25 users"],["sites","Labs / branches","e.g. 3 labs in Pune"],["current","Using now","e.g. Excel, Tally, old software"],
+  ["timeline","Timeline","e.g. go-live before March"],["decision","Decision maker","e.g. Mr. Shah, MD"],["integrations","Integrations","e.g. Tally, instruments, website"]];
+const DEPLOY=["Cloud","On-premise","Not sure"];
+const DEFAULT_MODULES={lims:["Sample management","Tests & results","Instrument integration","QC / QA","Certificates & reports","Inventory","Audit trail","Billing"],
+  erp:["Accounts","Inventory","Sales","Purchase","Production","HR & payroll","GST & e-invoice","CRM"]};
+const catModules=id=>{const c=catById(id); if(!c) return []; if(Array.isArray(c.modules)) return c.modules; return DEFAULT_MODULES[c.name.trim().toLowerCase()]||[];};
+const reqOf=l=>({...Object.fromEntries(REQ_FIELDS.map(f=>[f[0],""])),deploy:"",details:"",...(l.req||{}),modules:Array.isArray(l.req?.modules)?l.req.modules:[]});
+const REQ_LABEL={modules:"Modules",budget:"Budget",deploy:"Cloud or on-premise",...Object.fromEntries(REQ_FIELDS.map(f=>[f[0],f[1]]))};
+function reqProgress(l){
+  const r=reqOf(l), items=[["modules",r.modules.length>0],...REQ_FIELDS.map(f=>[f[0],!!String(r[f[0]]||"").trim()]),["deploy",!!r.deploy&&r.deploy!=="Not sure"],["budget",!!l.value]];
+  const missing=items.filter(x=>!x[1]).map(x=>x[0]); return {known:items.length-missing.length,total:items.length,missing};
+}
+function reqText(l){ const r=reqOf(l); return [r.modules.length&&"Modules: "+r.modules.join(", "),...REQ_FIELDS.map(f=>r[f[0]]&&`${f[1]}: ${r[f[0]]}`),r.deploy&&"Deployment: "+r.deploy,r.details&&"Details: "+r.details].filter(Boolean).join("\n"); }
+/* merge requirement facts: modules are unioned, details appended, other fields filled (or replaced when overwrite) */
+function mergeReq(cur,inc,{overwrite=false}={}){
+  const out=reqOf({req:cur}); if(!inc||typeof inc!=="object") return out;
+  for(const [k] of REQ_FIELDS){ const v=String(inc[k]??"").trim(); if(v&&(overwrite||!out[k])) out[k]=v; }
+  if(DEPLOY.includes(inc.deploy)&&(overwrite||!out.deploy||out.deploy==="Not sure")) out.deploy=inc.deploy;
+  if(Array.isArray(inc.modules)){ const have=new Set(out.modules.map(m=>m.toLowerCase())); inc.modules.map(m=>String(m).trim()).filter(Boolean).forEach(m=>{if(!have.has(m.toLowerCase())){have.add(m.toLowerCase());out.modules.push(m);}}); }
+  const d=String(inc.details??"").trim(); if(d&&!out.details.includes(d)) out.details=out.details?out.details+"\n"+d:d;
+  return out;
+}
+function matchQ(l,q){if(!q) return true;q=q.toLowerCase();return [l.name,l.company,l.phone,l.email,l.need,l.source,catName(l.category),reqText(l),...(l.notes||[]).map(n=>n.text)].join(" ").toLowerCase().includes(q);}
+
+/* ============ persistence ============ */
+const getLead=id=>leads.find(l=>l.id===id);
+/* create = full write; every later change = field-level patch, applied locally first so the next action never starts from stale data */
+async function createLead(id,data){ data.updatedAt=new Date().toISOString(); leads=[...leads,normalize({id,...data})]; await store.saveLead(id,data); }
+async function patchLead(id,patch,{touch=true}={}){
+  patch={...patch}; if(touch) patch.updatedAt=new Date().toISOString();
+  leads=leads.map(l=>l.id===id?{...l,...patch}:l);
+  await store.patchLead(id,patch);
+}
+async function saveSettings(patch){ settings={...settings,...patch}; renderAll(); try{ await store.saveSettings(settings);}catch(e){toast("Couldn't save settings. Try again.");} }
+
+/* ============ Google Calendar ============ */
+function calInput(l){
+  const start=new Date(l.nextAt), end=new Date(start.getTime()+(settings.calendar.duration||15)*6e4);
+  const last=lastNote(l);
+  const lines=[l.company&&`Company: ${l.company}`,l.phone&&`Phone: ${l.phone}`,`Category: ${catName(l.category)}`,`Status: ${statusLabel(l.status)}`,
+    l.need&&`Needs: ${l.need}`,last&&`Last update (${last.type}): ${last.text}`,waLink(l.phone)&&`WhatsApp: ${waLink(l.phone)}`].filter(Boolean);
+  return {summary:`Follow up: ${l.name}${l.company?" · "+l.company:""}`,startTime:toLocal(start)+":00",endTime:toLocal(end)+":00",
+    description:lines.join("\n"),overrideReminders:[{method:"popup",minutes:Number(settings.calendar.reminder)||0}]};
+}
+function eventIdFrom(res){
+  const p=res?.payload;
+  if(p&&typeof p==="object") return p.id||p.eventId||p.event?.id||"";
+  const s=typeof p==="string"?p:(res?.content||[]).map(c=>c.text||"").join(" ");
+  return (s.match(/"id"\s*:\s*"([^"]+)"/)||s.match(/event[_ ]?id[:= ]+"?([A-Za-z0-9_]+)/i)||[])[1]||"";
+}
+function calErrMsg(e){
+  switch(e?.code){
+    case "server_not_connected": return "Google Calendar isn't connected. Add it in claude.ai → Settings → Connectors.";
+    case "needs_reauth": return "Google Calendar needs to be reconnected in claude.ai → Settings → Connectors.";
+    case "selection_required": return "Pick which Google Calendar to use when claude.ai asks.";
+    case "not_in_manifest": case "approval_required": case "consent_required": return "Calendar access wasn't allowed for this app. Tap Retry to allow it.";
+    case "blocked_by_policy": return "Your organization blocks Google Calendar here.";
+    case "server_unavailable": return "Google Calendar didn't respond. Tap Retry.";
+    case "tool_error": return "Google Calendar rejected the event: "+(e.message||"").slice(0,120);
+    default: return "Couldn't reach Google Calendar. Tap Retry.";
+  }
+}
+const calQ={};
+function queueCal(id){ calQ[id]=(calQ[id]||Promise.resolve()).then(()=>calSync(id)).catch(()=>{}); return calQ[id]; }
+/* one sync at a time per lead; reads the latest copy of the lead; writes back only calendar fields */
+async function calSync(id){
+  const l=getLead(id); if(!mcp||!l) return;
+  const wants=OPEN(l.status)&&!!l.nextAt;
+  if(wants&&!settings.calendar.enabled) return;                 // sync off: never create or move events
+  const key=wants?[l.nextAt,l.name,l.company,settings.calendar.reminder,settings.calendar.duration].join("|"):"";
+  if(key===(l.calKey||"")&&!calErr[id]) return;                 // nothing calendar-relevant changed
+  try{
+    if(wants){
+      if(l.calNoId) return;
+      const input=calInput(l);
+      if(l.calEventId){
+        try{ await mcp.callTool("Google Calendar","update_event",{eventId:l.calEventId,...input}); await patchLead(id,{calKey:key},{touch:false}); delete calErr[id]; return; }
+        catch(e){ if(!(e?.code==="tool_error"&&/not.?found|404|410|deleted|gone/i.test(e.message||""))) throw e; }  // recreate only if the event is gone
+      }
+      const res=await mcp.callTool("Google Calendar","create_event",input);
+      const ev=eventIdFrom(res);
+      if(!ev){ await patchLead(id,{calNoId:true,calKey:key},{touch:false}); calErr[id]="Reminder added to Google Calendar, but later date changes won't move it. Update it in Calendar if the date changes."; }
+      else { await patchLead(id,{calEventId:ev,calKey:key},{touch:false}); delete calErr[id]; }
+    } else if(l.calEventId){
+      try{ await mcp.callTool("Google Calendar","delete_event",{eventId:l.calEventId}); }catch(e){ if(e?.code!=="tool_error") throw e; }
+      await patchLead(id,{calEventId:"",calKey:""},{touch:false}); delete calErr[id];
+    } else if(l.calKey){ await patchLead(id,{calKey:""},{touch:false}); }
+  }catch(e){ calErr[id]=calErrMsg(e); }
+  if(openId===id) renderSheet();
+}
+
+/* ============ AI ============ */
+function aiErr(e){
+  switch(e?.code){
+    case "not_granted": case "sampling_disabled": return "AI isn't allowed here. You can still type and save normally.";
+    case "rate_limited": return "AI is busy right now. Try again in a minute.";
+    case "invalid_json": case "empty_completion": return "AI couldn't understand that. Try saying it a bit more clearly.";
+    case "session_expired": case "not_signed_in": return "Please sign in again.";
+    case "ai_not_configured": return "AI is off. Add your Anthropic API key on the server to turn it on.";
+    case "ai_key_invalid": return "The server's Anthropic API key isn't working. Check it in the .env file.";
+    case "refused": return "AI declined this one. Try wording it differently.";
+    case "unavailable": return "No connection. Check your internet and try again.";
+    default: return "AI didn't respond. Try again.";
+  }
+}
+function nowContext(){const n=new Date();return `Current local date and time: ${toLocal(n)} (${DAYS[n.getDay()]}).`;}
+const catList=()=>settings.categories.map(c=>c.name);
+function resolveCat(name){ if(!name) return ""; const c=settings.categories.find(c=>c.name.toLowerCase()===String(name).toLowerCase()); return c?c.id:""; }
+const validWhen=s=>typeof s==="string"&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(s)&&!isNaN(new Date(s))?s:"";
+
+async function aiParseLead(text){
+  return sample.json(`You read a new sales lead for a business that sells software. The text is a WhatsApp message, an ad form reply or spoken notes, possibly in Hindi or Hinglish.
+${nowContext()}
+Known product categories: ${catList().join(", ")||"(none)"}.
+
+Text:
+"""${text.slice(0,6000)}"""
+
+Reply with only a JSON object:
+{"name":"person's name","company":"company or organisation","phone":"digits with country code if given","email":"","category":"exactly one of the known categories, or empty","source":"where the lead came from if stated, e.g. Facebook ad","need":"what they need, under 15 words","value":null,"temp":"hot|warm|cold or empty","followUp":"YYYY-MM-DDTHH:MM or empty","note":"one or two plain English sentences summarising the message","details":"every requirement point they mentioned, as short lines, or empty","req":{"modules":["modules or features they want; prefer names from: ${settings.categories.map(c=>c.name+" = "+catModules(c.id).join(", ")).join("; ")||"any"}"],"users":"","sites":"","current":"","timeline":"","decision":"","integrations":"","deploy":"Cloud|On-premise or empty"}}
+Rules: write everything in simple English (translate Hindi). Leave a field empty if it is not stated; never invent. value is a number in rupees only if a budget is stated. followUp only if a day or time is mentioned; if only a day is given use ${pad(settings.defaultHour)}:00. Timing: understand phrases like "after 3 months", "next year", "after Diwali", "after the budget in April", "same time next month". "At this time" or "is waqt" means the current time of day. If they ask to reconnect more than 3 weeks from now, say so in "note".`,{modelTier:"quick",cache:false});
+}
+async function aiParseUpdate(l,text){
+  const hist=(l.notes||[]).slice(0,4).map(n=>`- ${toLocal(new Date(n.at))} ${n.type}: ${n.text}`).join("\n")||"(none)";
+  return sample.json(`You turn a salesperson's quick spoken update into a clean CRM entry. The speech may be Hindi, Hinglish or English, and may contain dictation mistakes.
+${nowContext()}
+Lead: ${l.name}${l.company?" ("+l.company+")":""}. Category: ${catName(l.category)}. Current status: ${l.status}. Current next follow-up: ${l.nextAt||"none"}.
+Recent history:
+${hist}
+
+Spoken update:
+"""${text.slice(0,6000)}"""
+
+Reply with only a JSON object:
+{"type":"Call|WhatsApp|Meeting|Email|No answer|Note","note":"clean simple-English summary that keeps every fact, number, date and name","status":"one of new|contacted|interested|demo|proposal|hold|won|lost, or empty if unchanged","followUp":"YYYY-MM-DDTHH:MM or empty","temp":"hot|warm|cold or empty","value":null,"need":"","req":{"modules":[],"users":"","sites":"","current":"","timeline":"","decision":"","integrations":"","deploy":"","details":""}}
+Rules: followUp only when the update mentions when to talk next (e.g. "call him Monday", "after 2 days"); if only a day is given use ${pad(settings.defaultHour)}:00. status only when the update clearly changes it. value is rupees only if a price or budget is stated. need only if a new requirement is stated. req holds only requirement facts stated in THIS update (modules or features wanted, number of users, labs/branches, current system, timeline, decision maker, integrations, Cloud or On-premise, other requirement points in details); leave the rest empty. Timing: understand phrases like "after 3 months", "next year", "after Diwali", "after the budget in April", "same time next month". "At this time" or "is waqt" means the current time of day. If they ask to reconnect more than 3 weeks from now, also set status to "hold".`,{modelTier:"quick",cache:false});
+}
+
+/* ============ render: shell ============ */
+const TABS={today:"Today",leads:"Leads",dash:"Dashboard",prefs:"Settings"};
+function renderNav(){
+  document.querySelectorAll("[data-tab]").forEach(b=>{const t=b.dataset.tab;b.innerHTML=`${ic(t)}<span>${TABS[t]}</span>`;b.setAttribute("aria-current",t===tab?"page":"false");});
+  document.querySelector(".fab").innerHTML=ic("plus");
+}
+const typingIn=sel=>{const a=document.activeElement;return !!(a&&a.closest&&a.closest(sel)&&(a.tagName==="TEXTAREA"||(a.tagName==="INPUT"&&!/checkbox|radio|button|submit/.test(a.type))));};
+/* live data re-renders wait while the user types, then catch up on blur */
+function requestRender(){ if(typingIn("#main")||(dictating&&!openId)){renderDirty=true;return;} renderAll(); }
+document.addEventListener("focusout",()=>setTimeout(()=>{ if(renderDirty&&!typingIn("#main")){renderDirty=false;renderAll();} },0));
+function renderAll(){ renderNav(); const m=$("#main"); const y=scrollY;
+  if(tab==="today") renderToday(m); else if(tab==="leads") renderLeads(m); else if(tab==="dash") renderDash(m); else renderPrefs(m);
+  scrollTo(0,y); }
+
+function rowHTML(l,{showWa=true}={}){
+  const b=bucket(l), last=lastNote(l);
+  const due=l.nextAt&&OPEN(l.status)?`<span class="due ${b==="over"?"over":b==="today"?"today":""}">${esc(dueStr(l.nextAt))}</span>`:`<span class="pill st-${esc(l.status)}">${esc(statusLabel(l.status))}</span>`;
+  const sub=[l.company,catName(l.category)].filter(Boolean).join(" · ");
+  const wa=waLink(l.phone);
+  return `<div class="row" role="button" tabindex="0" data-open="${esc(l.id)}">
+    <span class="av" style="background:${catColor(l.category)}">${esc(initials(l.name))}</span>
+    <span class="mid"><span class="nm">${esc(l.name||"Unnamed")}${OPEN(l.status)&&prioOf(l)==="high"?' <span class="prio-tag">High</span>':""}</span>
+      <span class="co">${esc(sub)}</span>
+      <span class="last">${last?esc(agoStr(last.at)+" · "+last.type+(last.text?": "+last.text:"")):"No updates yet · added "+esc(agoStr(l.createdAt))}</span></span>
+    <span class="rt">${due}${showWa&&wa?`<a class="wa-mini" href="${wa}" target="_blank" rel="noopener" aria-label="WhatsApp ${esc(l.name)}" data-stop>${ic("wa")}</a>`:""}</span>
+  </div>`;
+}
+function catChips(sel,attr,{withAll=true,focusFirst=true}={}){
+  let cats=settings.categories.slice();
+  if(focusFirst) cats.sort((a,b)=>(settings.focus.includes(b.id)?1:0)-(settings.focus.includes(a.id)?1:0));
+  return `<div class="chips">${withAll?`<button class="chip" ${attr}="" aria-pressed="${!sel}">All</button>`:""}${cats.map(c=>`<button class="chip" ${attr}="${esc(c.id)}" aria-pressed="${sel===c.id}"><span class="dot" style="background:${catColor(c.id)}"></span>${esc(c.name)}${settings.focus.includes(c.id)?" ★":""}</button>`).join("")}</div>`;
+}
+function emptyFirstRun(){
+  return `<div class="card empty"><h3>Your lead diary is empty</h3>
+    <p>When a lead comes in on WhatsApp, tap <b>+</b> and paste the message or just speak the details. AI fills in the rest.</p>
+    <button class="btn primary" data-new>${ic("plus")}Add your first lead</button></div>`;
+}
+
+/* ============ Today ============ */
+function renderToday(m){
+  const now=new Date(), h=now.getHours();
+  const hello=h<12?"Good morning":h<17?"Good afternoon":"Good evening";
+  const focusSet=settings.focusOnly&&settings.focus.length?settings.focus:null;
+  let pool=leads.filter(l=>OPEN(l.status));
+  if(focusSet) pool=pool.filter(l=>focusSet.includes(l.category));
+  if(ui.todayCat) pool=pool.filter(l=>l.category===ui.todayCat);
+  const by=k=>pool.filter(l=>bucket(l)===k).sort(byPrioThen((a,b)=>new Date(a.nextAt)-new Date(b.nextAt)));
+  const over=by("over"), today=by("today"), noplan=pool.filter(l=>bucket(l)==="noplan").sort(byPrioThen((a,b)=>(b.createdAt||"").localeCompare(a.createdAt||"")));
+  const tomorrow=by("tomorrow"), week=by("week");
+  const tk=dayKey(now), scope=leads.filter(l=>(!focusSet||focusSet.includes(l.category))&&(!ui.todayCat||l.category===ui.todayCat));
+  const doneToday=scope.filter(l=>(l.notes||[]).some(n=>dayKey(new Date(n.at))===tk)&&bucket(l)!=="over"&&bucket(l)!=="today").length;
+  const remaining=over.length+today.length;
+  const weekAgo=Date.now()-7*864e5; const newWeek=leads.filter(l=>new Date(l.createdAt)>weekAgo).length;
+  const grp=(cls,title,list)=>list.length?`<section class="group ${cls}"><div class="group-h"><span class="bar"></span><h2>${title}</h2><span class="n">${list.length}</span></div><div class="card rows">${list.map(l=>rowHTML(l)).join("")}</div></section>`:"";
+  const needBackup=leads.length>=5&&(!settings.lastBackupAt||Date.now()-new Date(settings.lastBackupAt)>7*864e5);
+  const focusNames=focusSet?focusSet.map(catName).join(", "):"";
+  let body;
+  if(loadErr) body=`<div class="card banner">${esc(loadErr)}</div>`;
+  else if(!loaded) body=`<div class="card empty"><p>Loading your leads…</p></div>`;
+  else if(!leads.length) body=emptyFirstRun();
+  else {
+    body=grp("over","Missed follow-ups",over)+grp("today","Today",today)+grp("noplan","No follow-up date",noplan)+grp("tomorrow","Tomorrow",tomorrow)+grp("week","This week",week);
+    if(!body){ const next=by("later").slice(0,3);
+      body=`<div class="card empty"><h3>You're all caught up</h3><p>Nothing due this week.</p></div>`+(next.length?grp("later","Coming up",next):""); }
+  }
+  m.innerHTML=`<div class="view">
+    <section class="card hero-today">
+      <div class="ht-top"><div><div class="sub">${DAYS[now.getDay()]}, ${now.getDate()} ${MON[now.getMonth()]}</div><h1>${hello}</h1>
+        <div class="sub" style="margin-top:2px">${!leads.length?"Let's add your first lead.":remaining?`${remaining} follow-up${remaining===1?"":"s"} to do${over.length?` · ${over.length} missed`:""}`:doneToday?"All done for today. Nice work.":"Nothing due right now."}</div></div>
+        ${leads.length?`<div class="ring" role="img" aria-label="${doneToday} of ${doneToday+remaining} done today"><svg viewBox="0 0 76 76"><circle cx="38" cy="38" r="32" fill="none" stroke="var(--surface-2)" stroke-width="8"/>
+          <circle cx="38" cy="38" r="32" fill="none" stroke="${remaining?"var(--accent)":"var(--green)"}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${(2*Math.PI*32).toFixed(1)}" stroke-dashoffset="${((1-(doneToday+remaining?doneToday/(doneToday+remaining):1))*2*Math.PI*32).toFixed(1)}"/></svg>
+          <div class="rv"><div><b class="num">${doneToday}/${doneToday+remaining}</b><span>done</span></div></div></div>`:""}
+      </div>
+      <div class="mini">
+        <button class="red" data-jump="over"><b class="num">${over.length}</b><span>Missed</span></button>
+        <button class="amber" data-jump="today"><b class="num">${today.length}</b><span>Due today</span></button>
+        <button class="blue" data-jump="noplan"><b class="num">${noplan.length}</b><span>No date</span></button>
+        <div><b class="num">${newWeek}</b><span>New · 7d</span></div>
+      </div>
+      ${sample&&pool.length?`<button class="btn ai" id="planBtn" style="height:44px">${ic("spark")}Plan my day with AI</button>`:""}
+    </section>
+    <div id="planBox">${ui.plan?planHTML():""}</div>
+    ${store?.local?`<div class="card banner"><span>Your leads are only saved in this browser. Open this app from claude.ai to keep them synced and safe.</span></div>`:""}
+    ${needBackup?`<div class="card banner"><span>${settings.lastBackupAt?"Your last backup is over a week old.":"You haven't backed up your leads yet."} Keep a copy in Excel.</span><button class="btn sm" id="bkBtn">${ic("down")}Back up now</button></div>`:""}
+    ${settings.categories.length>1?catChips(ui.todayCat,"data-tcat"):""}
+    ${focusSet?`<div class="sub">Showing focus categories only: ${esc(focusNames)}. Change this in Settings.</div>`:""}
+    ${body}
+  </div>`;
+  m.querySelectorAll("[data-tcat]").forEach(b=>b.onclick=()=>{ui.todayCat=b.dataset.tcat;renderAll();});
+  m.querySelectorAll("[data-jump]").forEach(b=>b.onclick=()=>m.querySelector(`.group.${b.dataset.jump}`)?.scrollIntoView({behavior:"smooth",block:"start"}));
+  $("#bkBtn")&&($("#bkBtn").onclick=exportExcel);
+  $("#planBtn")&&($("#planBtn").onclick=()=>planDay([...over,...today,...noplan.slice(0,10)]));
+  $("#planX")&&($("#planX").onclick=()=>{ui.plan=null;renderAll();});
+}
+const planHTML=()=>`<div class="card aibox"><div class="head"><b>${ic("spark")}Your plan for today</b><button class="btn sm ghost" id="planX" aria-label="Close plan">${ic("x")}</button></div><div class="out" id="planOut">${esc(ui.plan.text)}</div></div>`;
+async function planDay(list){
+  if(!list.length){toast("Nothing due today to plan.");return;}
+  if(ui.plan?.busy) return;
+  ui.plan={text:"Thinking…",busy:true}; requestRender();
+  const data=list.slice(0,25).map(l=>`- ${l.name}${l.company?" ("+l.company+")":""}, ${catName(l.category)}, status ${l.status}, priority ${prioOf(l)}, ${l.temp||"no temperature"}, follow-up ${l.nextAt||"not set"}, value ${l.value||"unknown"}. Last: ${lastNote(l)?lastNote(l).type+" - "+lastNote(l).text:"no contact yet"}`).join("\n");
+  try{
+    await sample(`You are a sharp sales assistant. ${nowContext()} Here are the leads that need attention today:\n${data}\n\nWrite a short call plan for today in simple English. Order by priority (missed follow-ups, hot leads and high value first). Format: a numbered list, one line per lead: "Name — why now — what to say or do". Max 8 lines. Then one line starting "Tip:" with a single practical tip. No markdown symbols like ** or #.`,
+      {onText:({text})=>{ if(ui.plan) ui.plan.text=text; const o=$("#planOut"); if(o) o.textContent=text;}});
+  }catch(e){ if(ui.plan) ui.plan.text=aiErr(e); const o=$("#planOut"); if(o) o.textContent=ui.plan?.text||""; }
+  if(ui.plan) ui.plan.busy=false;
+}
+
+/* ============ Leads ============ */
+function leadListHTML(){
+  const list=leads.filter(l=>matchQ(l,ui.q)&&(!ui.fStatus||l.status===ui.fStatus)&&(!ui.fCat||l.category===ui.fCat)&&(!ui.fPrio||OPEN(l.status)&&prioOf(l)==="high")&&(!ui.fLong||isLong(l)));
+  const sorters={prio:(a,b)=>(OPEN(a.status)?0:1)-(OPEN(b.status)?0:1)||prioRankOf(a)-prioRankOf(b),recent:(a,b)=>(b.updatedAt||"").localeCompare(a.updatedAt||""),next:(a,b)=>(a.nextAt||"9")<(b.nextAt||"9")?-1:(a.nextAt||"9")>(b.nextAt||"9")?1:0,value:(a,b)=>(b.value||0)-(a.value||0),name:(a,b)=>(a.name||"").localeCompare(b.name||"")};
+  list.sort(sorters[ui.sort]);
+  if(!loaded) return `<div class="card empty"><p>Loading your leads…</p></div>`;
+  if(!leads.length) return emptyFirstRun();
+  return list.length?`<div class="sub" style="padding:0 4px 8px">${list.length} lead${list.length===1?"":"s"}</div><div class="card rows">${list.map(l=>rowHTML(l)).join("")}</div>`:`<div class="card empty"><h3>No matching leads</h3><p>Try a different search or filter.</p></div>`;
+}
+function renderLeads(m){
+  const counts=Object.fromEntries(STATUSES.map(s=>[s.id,leads.filter(l=>l.status===s.id&&(!ui.fCat||l.category===ui.fCat)).length]));
+  m.innerHTML=`<div class="view">
+    <div class="top"><div><h1>Leads</h1><div class="sub">${leads.length} total · ${leads.filter(l=>OPEN(l.status)).length} open</div></div>
+      ${sample&&leads.some(l=>OPEN(l.status))?`<button class="btn ai sm" id="prioAI" ${ui.prioBusy?"disabled":""}>${ic("spark")}${ui.prioBusy?"Prioritising…":"Prioritise with AI"}</button>`:""}
+      <select class="select-pill" id="sortSel" aria-label="Sort">
+        <option value="prio">Priority</option><option value="recent">Recently updated</option><option value="next">Next follow-up</option><option value="value">Deal value</option><option value="name">Name A–Z</option></select></div>
+    <div class="toolbar">
+      <div class="searchbox">${ic("search")}<input class="input" id="q" type="search" placeholder="Search name, company, phone, notes" value="${esc(ui.q)}"></div>
+      ${settings.categories.length?catChips(ui.fCat,"data-fcat"):""}
+      <div class="chips"><button class="chip" id="fPrio" aria-pressed="${ui.fPrio}"><span class="dot" style="background:var(--red)"></span>High priority <span class="muted num">${leads.filter(l=>OPEN(l.status)&&prioOf(l)==="high"&&(!ui.fCat||l.category===ui.fCat)).length}</span></button><button class="chip" id="fLong" aria-pressed="${ui.fLong}">${ic("cal")}Long-term <span class="muted num">${leads.filter(isLong).length}</span></button><button class="chip" data-fst="" aria-pressed="${!ui.fStatus}">All stages</button>${STATUSES.map(s=>`<button class="chip" data-fst="${s.id}" aria-pressed="${ui.fStatus===s.id}">${s.label} <span class="muted num">${counts[s.id]}</span></button>`).join("")}</div>
+    </div>
+    ${sample&&leads.length?`<form class="ask" id="askForm"><input class="input" id="askQ" placeholder="Ask AI, e.g. which LIMS leads want a demo?" value="${esc(ui.ask?.q||"")}"><button class="btn ai" type="submit" style="height:44px">${ic("spark")}Ask</button></form>
+      ${ui.ask?.text?`<div class="card aibox ask-out"><div class="head"><b>${ic("spark")}${esc(ui.ask.q)}</b><button class="btn sm ghost" id="askX" aria-label="Close">${ic("x")}</button></div><div class="out">${esc(ui.ask.text)}</div>
+        ${(ui.ask.ids||[]).length?`<div class="names">${ui.ask.ids.map(id=>leads.find(l=>l.id===id)).filter(Boolean).map(l=>`<button class="chip" data-open="${esc(l.id)}"><span class="dot" style="background:${catColor(l.category)}"></span>${esc(l.name)}</button>`).join("")}</div>`:""}</div>`:""}`:""}
+    <div id="leadList">${leadListHTML()}</div>
+  </div>`;
+  $("#sortSel").value=ui.sort;
+  const fp=$("#fPrio"); if(fp) fp.onclick=()=>{ui.fPrio=!ui.fPrio;renderAll();};
+  const fl=$("#fLong"); if(fl) fl.onclick=()=>{ui.fLong=!ui.fLong;if(ui.fLong)ui.sort="next";renderAll();};
+  const pa=$("#prioAI"); if(pa) pa.onclick=aiPrioritise;
+  const af=$("#askForm"); if(af) af.onsubmit=e=>{e.preventDefault();askLeads($("#askQ").value.trim());};
+  const ax=$("#askX"); if(ax) ax.onclick=()=>{ui.ask=null;renderAll();};
+  $("#sortSel").onchange=e=>{ui.sort=e.target.value;renderAll();};
+  const q=$("#q"); q.oninput=e=>{ui.q=e.target.value;clearTimeout(q.t);q.t=setTimeout(()=>{const ll=$("#leadList"); if(ll) ll.innerHTML=leadListHTML();},150);};
+  m.querySelectorAll("[data-fcat]").forEach(b=>b.onclick=()=>{ui.fCat=b.dataset.fcat;renderAll();});
+  m.querySelectorAll("[data-fst]").forEach(b=>b.onclick=()=>{ui.fStatus=b.dataset.fst;renderAll();});
+}
+
+async function aiPrioritise(){
+  if(ui.prioBusy) return;
+  const open=leads.filter(l=>OPEN(l.status)&&l.prioBy!=="you"||OPEN(l.status)&&!l.prio).slice(0,150);
+  if(!open.length){toast("Every open lead already has a priority you set.");return;}
+  ui.prioBusy=true; renderAll();
+  const data=open.map(l=>({id:l.id,name:l.name,company:l.company,category:catName(l.category),stage:l.status,interest:l.temp,value:l.value,need:l.need,
+    added:toLocal(new Date(l.createdAt||Date.now())),next:l.nextAt,autoScore:autoPrio(l).score,updates:(l.notes||[]).slice(0,4).map(n=>`${toLocal(new Date(n.at))} ${n.type}: ${String(n.text).slice(0,200)}`)}));
+  try{
+    const r=await sample.json(`You prioritise a software salesperson's open leads so they chase the right people first. ${nowContext()}
+Starred categories: ${settings.focus.map(catName).join(", ")||"none"}.
+Leads (JSON):
+${JSON.stringify(data)}
+
+Judge buying intent, deal size, urgency, how recently they engaged, and risk of going cold. Keep roughly the top 25% as high.
+Reply with only a JSON array, one item per lead: [{"id":"...","priority":"high|medium|low","reason":"why, under 12 words"}]`,{cache:false});
+    const list=Array.isArray(r)?r:Array.isArray(r?.leads)?r.leads:[];
+    let n=0;
+    for(const it of list){
+      const l=getLead(String(it?.id||"")); if(!l||!OPEN(l.status)||(l.prio&&l.prioBy!=="ai")||PRANK[it.priority]===undefined) continue;
+      if(l.prio===it.priority&&l.prioWhy===it.reason) continue;
+      await patchLead(l.id,{prio:it.priority,prioBy:"ai",prioWhy:String(it.reason||"").slice(0,120)},{touch:false}); n++;
+    }
+    toast(n?`AI set the priority of ${n} lead${n===1?"":"s"}`:"Priorities are already up to date");
+    if(n){ui.sort="prio";}
+  }catch(e){ toast(aiErr(e)); }
+  ui.prioBusy=false; requestRender();
+}
+async function askLeads(q){
+  if(!q){$("#askQ")?.focus();return;}
+  ui.ask={q,text:"Thinking…",ids:[]}; renderAll();
+  const data=leads.slice().sort((a,b)=>(b.updatedAt||"").localeCompare(a.updatedAt||"")).slice(0,300).map(l=>({id:l.id,name:l.name,company:l.company,category:catName(l.category),stage:l.status,temp:l.temp,value:l.value,need:l.need,req:reqText(l).slice(0,400),source:l.source,
+    priority:prioOf(l),added:(l.createdAt||"").slice(0,10),next:l.nextAt,updates:(l.notes||[]).slice(0,3).map(n=>`${toLocal(new Date(n.at))} ${n.type}: ${String(n.text).slice(0,160)}`)}));
+  try{
+    const r=await sample.json(`You answer questions about a salesperson's own leads. ${nowContext()}
+Leads (JSON):
+${JSON.stringify(data)}
+
+Question: ${q}
+
+Reply with only JSON: {"answer":"a short, direct answer in simple English (max 5 lines, use exact numbers)","ids":["ids of the leads the answer is about, most relevant first, max 12"]}`,{cache:false});
+    if(ui.ask?.q===q) ui.ask={q,text:String(r?.answer||"No answer."),ids:Array.isArray(r?.ids)?r.ids.map(String):[]};
+  }catch(e){ if(ui.ask?.q===q) ui.ask={q,text:aiErr(e),ids:[]}; }
+  if(tab==="leads"&&!openId) renderAll();
+}
+
+/* ============ Dashboard ============ */
+function renderDash(m){
+  const P=ui.dashPeriod, since=P?Date.now()-P*864e5:0, inP=s=>s&&new Date(s).getTime()>=since;
+  const base=leads.filter(l=>!ui.dashCat||l.category===ui.dashCat);
+  const newL=base.filter(l=>inP(l.createdAt));
+  const won=base.filter(l=>l.status==="won"&&inP(l.closedAt||l.updatedAt));
+  const lost=base.filter(l=>l.status==="lost"&&inP(l.closedAt||l.updatedAt));
+  const open=base.filter(l=>OPEN(l.status));
+  const pipe=open.reduce((s,l)=>s+(Number(l.value)||0),0);
+  const wonVal=won.reduce((s,l)=>s+(Number(l.value)||0),0);
+  const winRate=won.length+lost.length?Math.round(won.length/(won.length+lost.length)*100):null;
+  const overdue=open.filter(l=>bucket(l)==="over").length;
+  const covered=open.length?Math.round(open.filter(l=>l.nextAt).length/open.length*100):null;
+  const touches=base.reduce((s,l)=>s+(l.notes||[]).filter(n=>inP(n.at)).length,0);
+  const fmtMoney=v=>v>=1e7?"₹"+(v/1e7).toFixed(1)+" Cr":v>=1e5?"₹"+(v/1e5).toFixed(1)+" L":v?"₹"+v.toLocaleString("en-IN"):"₹0";
+  const periodName=P?`last ${P} days`:"all time";
+
+  // weekly new leads (12 weeks)
+  const weeks=[]; const start=new Date(); start.setHours(0,0,0,0); start.setDate(start.getDate()-((start.getDay()+6)%7)); // Monday
+  for(let i=11;i>=0;i--){const s=new Date(start);s.setDate(s.getDate()-7*i);const e=new Date(s);e.setDate(e.getDate()+7);
+    weeks.push({s,n:base.filter(l=>{const t=new Date(l.createdAt);return t>=s&&t<e;}).length});}
+  const wMax=Math.max(1,...weeks.map(w=>w.n));
+  const vbars=weeks.map((w,i)=>`<div class="col" data-tip="Week of ${w.s.getDate()} ${MON[w.s.getMonth()]}: ${w.n} lead${w.n===1?"":"s"}">
+      ${(i===weeks.length-1||w.n===wMax)&&w.n?`<span class="lab num" style="bottom:${w.n/wMax*100}%;top:auto;transform:translateY(-4px)">${w.n}</span>`:""}
+      <div class="b ${w.n?"":"zero"}" style="height:${w.n/wMax*100}%"></div></div>`).join("");
+  const xl=weeks.map((w,i)=>`<span>${i%3===0||i===11?`${w.s.getDate()} ${MON[w.s.getMonth()]}`:""}</span>`).join("");
+
+  // daily activity 14 days
+  const days=[]; for(let i=13;i>=0;i--){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-i);const k=dayKey(d);
+    days.push({d,n:base.reduce((s,l)=>s+(l.notes||[]).filter(n=>dayKey(new Date(n.at))===k).length,0)});}
+  const dMax=Math.max(1,...days.map(d=>d.n));
+  const dbars=days.map((d,i)=>`<div class="col" data-tip="${DAYS[d.d.getDay()]} ${d.d.getDate()} ${MON[d.d.getMonth()]}: ${d.n} update${d.n===1?"":"s"}">
+      ${i===days.length-1&&d.n?`<span class="lab num" style="bottom:${d.n/dMax*100}%;top:auto;transform:translateY(-4px)">${d.n}</span>`:""}
+      <div class="b ${d.n?"":"zero"}" style="height:${d.n/dMax*100}%"></div></div>`).join("");
+  const dxl=days.map((d,i)=>`<span>${i%2===1?DAYS[d.d.getDay()][0]:""}</span>`).join("");
+
+  // pipeline by stage (current)
+  const stageCounts=STATUSES.map(s=>({...s,n:base.filter(l=>l.status===s.id).length}));
+  const sMax=Math.max(1,...stageCounts.map(s=>s.n));
+  const stageBars=stageCounts.map((s,i)=>`<div class="hbar" data-tip="${s.label}: ${s.n}"><span class="n">${s.label}</span><span class="track"><span class="fill" style="width:${s.n/sMax*100}%;background:${s.id==="won"?"var(--green)":s.id==="lost"?"var(--ink-3)":"var(--accent)"};opacity:${s.id==="won"||s.id==="lost"?1:.45+i*.11}"></span></span><span class="c num">${s.n}</span></div>`).join("");
+
+  // sources
+  const srcMap={}; newL.forEach(l=>{const k=l.source||"Not recorded";srcMap[k]=(srcMap[k]||0)+1;});
+  const srcs=Object.entries(srcMap).sort((a,b)=>b[1]-a[1]).slice(0,6); const srcMax=Math.max(1,...srcs.map(s=>s[1]));
+  const srcBars=srcs.length?srcs.map(([k,n])=>`<div class="hbar" data-tip="${esc(k)}: ${n}"><span class="n">${esc(k)}</span><span class="track"><span class="fill" style="width:${n/srcMax*100}%"></span></span><span class="c num">${n}</span></div>`).join(""):`<p class="muted">No leads in this period.</p>`;
+
+  // categories table
+  const cats=[...settings.categories.map(c=>c.id),""];
+  const catRows=cats.map(cid=>{
+    const ls=leads.filter(l=>(catById(l.category)?l.category:"")===cid); if(!ls.length) return "";
+    const nl=ls.filter(l=>inP(l.createdAt)).length, op=ls.filter(l=>OPEN(l.status)).length, w=ls.filter(l=>l.status==="won").length, lo=ls.filter(l=>l.status==="lost").length;
+    const od=ls.filter(l=>bucket(l)==="over").length, tot=ls.length;
+    return `<tr><td><span style="display:inline-flex;align-items:center;gap:8px;font-weight:600"><span class="dot" style="background:${catColor(cid)}"></span>${esc(cid?catName(cid):"No category")}</span></td>
+      <td>${nl}</td><td>${op}</td><td>${w}</td><td>${w+lo?Math.round(w/(w+lo)*100)+"%":"–"}</td><td style="color:${od?"var(--red)":"inherit"}">${od}</td>
+      <td><div class="stack" data-tip="Open ${op} · Won ${w} · Lost ${lo}"><i style="width:${op/tot*100}%;background:var(--accent)"></i><i style="width:${w/tot*100}%;background:var(--green)"></i><i style="width:${lo/tot*100}%;background:var(--ink-3)"></i></div></td></tr>`;
+  }).join("");
+
+  m.innerHTML=`<div class="view wide">
+    <div class="top"><div><h1>Dashboard</h1><div class="sub">${ui.dashCat?esc(catName(ui.dashCat))+" · ":""}${periodName}</div></div>
+      <div class="seg" role="group" aria-label="Period">${[[7,"7D"],[30,"30D"],[90,"90D"],[0,"All"]].map(([v,l])=>`<button data-per="${v}" aria-pressed="${P===v}">${l}</button>`).join("")}</div></div>
+    ${settings.categories.length?catChips(ui.dashCat,"data-dcat"):""}
+    <div class="kpis">
+      <div class="card kpi"><span class="k">New leads</span><span class="v num">${newL.length}</span><span class="s">${periodName}</span></div>
+      <div class="card kpi"><span class="k">Won</span><span class="v num" style="color:var(--green)">${won.length}</span><span class="s">${wonVal?fmtMoney(wonVal)+" closed":periodName}</span></div>
+      <div class="card kpi"><span class="k">Win rate</span><span class="v num">${winRate===null?"–":winRate+"%"}</span><span class="s">won ÷ closed</span></div>
+      <div class="card kpi"><span class="k">Open pipeline</span><span class="v num">${fmtMoney(pipe)}</span><span class="s">${open.length} open lead${open.length===1?"":"s"}</span></div>
+      <div class="card kpi"><span class="k">Missed follow-ups</span><span class="v num" style="color:${overdue?"var(--red)":"inherit"}">${overdue}</span><span class="s">${covered===null?"no open leads":covered+"% of open leads have a date"}</span></div>
+      <div class="card kpi"><span class="k">Updates logged</span><span class="v num">${touches}</span><span class="s">${newL.length?(touches/Math.max(1,newL.length)).toFixed(1)+" per new lead":periodName}</span></div>
+    </div>
+    ${sample&&leads.length?`<div id="insBox">${ui.ins?`<div class="card aibox"><div class="head"><b>${ic("spark")}AI review</b><button class="btn sm ghost" id="insX" aria-label="Close review">${ic("x")}</button></div><div class="out" id="insOut">${esc(ui.ins.text)}</div></div>`:`<button class="btn ai" id="insBtn">${ic("spark")}What should I improve? Ask AI</button>`}</div>`:""}
+    <div class="dash-grid">
+      <div class="card chart full"><h3>New leads per week</h3><p class="cap">Last 12 weeks, by the date the lead was added</p>
+        <div class="vbars" style="grid-template-columns:repeat(12,1fr)">${vbars}</div><div class="xlabels" style="display:grid;grid-template-columns:repeat(12,1fr)">${xl}</div></div>
+      <div class="card chart"><h3>Pipeline by stage</h3><p class="cap">Where every lead stands right now</p><div class="hbars">${stageBars}</div></div>
+      <div class="card chart"><h3>Your follow-up activity</h3><p class="cap">Updates logged per day, last 14 days</p>
+        <div class="vbars" style="grid-template-columns:repeat(14,1fr);height:130px">${dbars}</div><div class="xlabels" style="display:grid;grid-template-columns:repeat(14,1fr)">${dxl}</div></div>
+      <div class="card chart"><h3>Where leads come from</h3><p class="cap">New leads by source, ${periodName}</p><div class="hbars">${srcBars}</div></div>
+      <div class="card chart"><h3>Categories</h3><p class="cap">New = ${periodName}. Other columns are all time.</p>
+        ${catRows?`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Category</th><th>New</th><th>Open</th><th>Won</th><th>Win %</th><th>Missed</th><th>Mix</th></tr></thead><tbody>${catRows}</tbody></table></div>
+        <div class="legend"><span><i style="background:var(--accent)"></i>Open</span><span><i style="background:var(--green)"></i>Won</span><span><i style="background:var(--ink-3)"></i>Lost</span></div>`:`<p class="muted">Add categories in Settings to see the split.</p>`}</div>
+    </div>
+  </div>`;
+  m.querySelectorAll("[data-tip]").forEach(el=>{el.setAttribute("role","img");el.setAttribute("aria-label",el.dataset.tip);});
+  m.querySelectorAll("[data-per]").forEach(b=>b.onclick=()=>{ui.dashPeriod=Number(b.dataset.per);renderAll();});
+  m.querySelectorAll("[data-dcat]").forEach(b=>b.onclick=()=>{ui.dashCat=b.dataset.dcat;renderAll();});
+  const ix=$("#insX"); if(ix) ix.onclick=()=>{ui.ins=null;renderAll();};
+  const ib=$("#insBtn"); if(ib) ib.onclick=async()=>{
+    ui.ins={text:"Thinking…",busy:true}; renderAll();
+    const summary=`Period: ${periodName}. New leads ${newL.length}. Won ${won.length}, lost ${lost.length}. Open ${open.length}, open pipeline ${pipe} INR. Missed follow-ups ${overdue}. Open leads with a follow-up date: ${covered??0}%. Updates logged ${touches}.
+Stages now: ${stageCounts.map(s=>s.label+" "+s.n).join(", ")}.
+Sources: ${srcs.map(s=>s[0]+" "+s[1]).join(", ")||"none"}.
+Categories: ${settings.categories.map(c=>{const ls=leads.filter(l=>l.category===c.id);return `${c.name}: ${ls.length} total, ${ls.filter(l=>l.status==="won").length} won, ${ls.filter(l=>OPEN(l.status)).length} open`;}).join("; ")||"none"}.
+Weekly new leads (oldest→newest): ${weeks.map(w=>w.n).join(", ")}.`;
+    try{ await sample(`You coach a small business owner who sells software and gets leads from ads on WhatsApp. ${nowContext()} Here are their numbers:\n${summary}\n\nGive 4 to 6 short, specific, practical points in simple English: what is going well, what is leaking, and exactly what to do this week. Use "• " bullets, no markdown headings or bold.`,
+      {onText:({text})=>{ if(ui.ins) ui.ins.text=text; const o=$("#insOut");if(o)o.textContent=text;}}); }
+    catch(e){ if(ui.ins) ui.ins.text=aiErr(e); const o=$("#insOut"); if(o) o.textContent=ui.ins?.text||""; }
+    if(ui.ins) ui.ins.busy=false;
+  };
+}
+
+/* ============ Settings ============ */
+function renderPrefs(m){
+  const C=settings.categories, SV=window.LD?.server()||{};
+  m.innerHTML=`<div class="view">
+    <div class="top"><h1>Settings</h1></div>
+
+    <section class="set-sec"><h2>Categories</h2>
+      <p class="sub" style="padding:0 4px">What each lead is for, e.g. LIMS or ERP. Add the modules you sell so you can tick them in each lead's requirements. Star a category to put it first on your Today screen.</p>
+      <div class="card">
+        ${C.map(c=>{const n=leads.filter(l=>l.category===c.id).length;return `<div class="set-row">
+          <span class="dot" style="width:12px;height:12px;background:${catColor(c.id)}"></span>
+          <div class="grow"><input class="cat-name" data-cname="${c.id}" value="${esc(c.name)}" aria-label="Category name"><input class="cat-mods" data-cmods="${esc(c.id)}" value="${esc(catModules(c.id).join(", "))}" placeholder="Modules, comma separated" aria-label="Modules for ${esc(c.name)}"><div class="d">${n} lead${n===1?"":"s"}</div></div>
+          <button class="star" data-cstar="${c.id}" aria-pressed="${settings.focus.includes(c.id)}" aria-label="Focus on Today">${ic("star")}</button>
+          <button class="btn sm ghost" data-cdel="${c.id}" data-n="${n}" aria-label="Delete ${esc(c.name)}">${ic("trash")}</button></div>`;}).join("")}
+        <form class="set-row" id="catForm"><input class="input" id="newCat" placeholder="New category, e.g. HRMS" style="flex:1"><button class="btn primary" type="submit">Add</button></form>
+      </div>
+    </section>
+
+    <section class="set-sec"><h2>Today screen</h2>
+      <div class="card">
+        <label class="set-row"><div class="grow"><div class="t">Show only starred categories</div><div class="d">${settings.focus.length?"Today will list only: "+esc(settings.focus.map(catName).join(", ")):"Star a category above first"}</div></div>
+          <span class="switch"><input type="checkbox" id="focusOnly" ${settings.focusOnly?"checked":""} ${settings.focus.length?"":"disabled"}><span></span></span></label>
+        <label class="set-row"><div class="grow"><div class="t">Default follow-up time</div><div class="d">Used for “Tomorrow”, “2 days” and similar buttons</div></div>
+          <select class="select-pill" id="defHour">${[9,10,11,12,14,15,16,17,18].map(h=>`<option value="${h}" ${settings.defaultHour===h?"selected":""}>${h>12?h-12:h}:00 ${h>=12?"PM":"AM"}</option>`).join("")}</select></label>
+      </div>
+    </section>
+
+    <section class="set-sec"><h2>Google Calendar</h2>
+      <div class="card">
+        ${!SV.google?.configured?`<div class="set-row"><div class="grow"><div class="t">Not set up yet</div><div class="d">Add your Google keys to the server first (README, section "Google Calendar"), then restart the app.</div></div></div>`
+          :SV.google.connected?`<div class="set-row"><div class="grow"><div class="t">Connected</div><div class="d">${esc(SV.google.email||"Google account")}</div></div><button class="btn sm" id="gDisc">Disconnect</button></div>`
+          :`<div class="set-row"><div class="grow"><div class="t">Connect Google Calendar</div><div class="d">Every follow-up becomes a calendar event with a reminder.</div></div><a class="btn primary sm" href="/api/google/connect">Connect</a></div>`}
+        <label class="set-row"><div class="grow"><div class="t">Add follow-ups to Google Calendar</div><div class="d">Events move when you change a date, and disappear when a deal closes</div></div>
+          <span class="switch"><input type="checkbox" id="calOn" ${settings.calendar.enabled?"checked":""}><span></span></span></label>
+        <label class="set-row"><div class="grow"><div class="t">Remind me</div><div class="d">For phone notifications and Calendar</div></div>
+          <select class="select-pill" id="calRem">${[[0,"At the time"],[5,"5 min before"],[10,"10 min before"],[30,"30 min before"],[60,"1 hour before"]].map(([v,l])=>`<option value="${v}" ${Number(settings.calendar.reminder)===v?"selected":""}>${l}</option>`).join("")}</select></label>
+        <label class="set-row"><div class="grow"><div class="t">Event length</div></div>
+          <select class="select-pill" id="calDur">${[[15,"15 min"],[30,"30 min"],[60,"1 hour"]].map(([v,l])=>`<option value="${v}" ${Number(settings.calendar.duration)===v?"selected":""}>${l}</option>`).join("")}</select></label>
+      </div>
+    </section>
+
+    <section class="set-sec"><h2>Phone notifications</h2>
+      <div class="card">
+        <div class="set-row"><div class="grow"><div class="t">This device</div><div class="d" id="pushD">Checking…</div></div><button class="btn sm" id="pushBtn" hidden></button></div>
+        <label class="set-row"><div class="grow"><div class="t">Morning summary</div><div class="d">One notification with the day's follow-ups</div></div>
+          <select class="select-pill" id="digest">${[[-1,"Off"],[7,"7:00 AM"],[8,"8:00 AM"],[9,"9:00 AM"],[10,"10:00 AM"],[11,"11:00 AM"]].map(([v,l])=>`<option value="${v}" ${Number(settings.digestHour??9)===v?"selected":""}>${l}</option>`).join("")}</select></label>
+        <div class="set-row"><div class="grow d">${SV.push?.devices||0} device${SV.push?.devices===1?"":"s"} get reminders. On iPhone, open the app from its Home Screen icon to turn them on (iOS 16.4 or later).</div><button class="btn sm" id="pushTest">Send test</button></div>
+      </div>
+    </section>
+
+    <section class="set-sec"><h2>Voice and AI</h2>
+      <div class="card">
+        <label class="set-row"><div class="grow"><div class="t">Speech language</div><div class="d">For the mic button. AI understands both.</div></div>
+          <select class="select-pill" id="speechLang"><option value="en-IN">English (India)</option><option value="hi-IN">Hindi</option></select></label>
+        <div class="set-row"><div class="grow"><div class="t">AI ${SV.ai?"is on":"is off"}</div><div class="d">${SV.ai?"Uses the Anthropic API key on your server.":"Add ANTHROPIC_API_KEY to the server's .env file and restart to turn on AI."}</div></div></div>
+      </div>
+    </section>
+
+    ${dupeGroups().length?`<section class="set-sec"><h2>Possible duplicates</h2><div class="card">
+      ${dupeGroups().map(g=>`<div class="set-row"><div class="grow"><div class="t num">${esc(g[0].phone)}</div><div class="chips wrap" style="margin-top:6px">${g.map(l=>`<button class="chip" data-open="${esc(l.id)}">${esc(l.name)} · ${esc(statusLabel(l.status))}</button>`).join("")}</div></div></div>`).join("")}
+      <div class="set-row"><div class="grow d">These leads share a phone number. Open one, copy anything useful into the other, then delete the extra.</div></div></div></section>`:""}
+    <section class="set-sec"><h2>Backup</h2>
+      <div class="card">
+        <div class="set-row"><div class="grow"><div class="t">Export everything to Excel</div><div class="d">${settings.lastBackupAt?"Last backup: "+esc(whenStr(settings.lastBackupAt)):"No backup yet"} · ${leads.length} leads</div></div>
+          <button class="btn primary" id="expBtn">${ic("down")}Export</button></div>
+        <div class="set-row"><div class="grow"><div class="t">Full backup file</div><div class="d">Everything, for restoring or moving to a new server</div></div><a class="btn sm" href="/api/export.json" download>Download</a></div>
+        <label class="set-row"><div class="grow"><div class="t">Restore from a backup file</div><div class="d">Adds leads from a .json backup. The newer copy of each lead is kept.</div></div><span class="btn sm">Choose file</span><input type="file" id="impFile" accept=".json,application/json" hidden></label>
+      </div>
+    </section>
+
+    <section class="set-sec"><h2>Account</h2>
+      <div class="card">
+        <form class="set-row" id="pwForm" style="flex-wrap:wrap"><input class="input" id="pwCur" type="password" placeholder="Current password" autocomplete="current-password" style="flex:1;min-width:140px"><input class="input" id="pwNew" type="password" placeholder="New password, 8+ characters" autocomplete="new-password" minlength="8" style="flex:1;min-width:140px"><button class="btn" type="submit">Change password</button></form>
+        <div class="set-row"><div class="grow"><div class="t">Sign out of this device</div></div><button class="btn sm danger" id="logout">Sign out</button></div>
+      </div>
+    </section>
+
+    <section class="set-sec"><h2>Install</h2>
+      <div class="card pad sub">iPhone: open the app in Safari, tap Share, then <b>Add to Home Screen</b>. It opens full screen like a normal app.<br>Mac: in Safari choose File → Add to Dock, or in Chrome click the install icon in the address bar.</div>
+    </section>
+  </div>`;
+  $("#catForm").onsubmit=e=>{e.preventDefault();const v=$("#newCat").value.trim();if(!v) return;
+    if(C.some(c=>c.name.toLowerCase()===v.toLowerCase())){toast("That category already exists.");return;}
+    addCategory(v);toast(`Added ${v}`);};
+  m.querySelectorAll("[data-cname]").forEach(inp=>{
+    const commit=()=>{const v=inp.value.trim(),id=inp.dataset.cname,c=catById(id); if(!v||!c||v===c.name){inp.value=c?.name||"";return;}
+      saveSettings({categories:C.map(x=>x.id===id?{...x,name:v}:x)});toast("Renamed");};
+    inp.onblur=commit; inp.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();inp.blur();}};});
+  m.querySelectorAll("[data-cmods]").forEach(inp=>{
+    const commit=()=>{const id=inp.dataset.cmods, list=[...new Set(inp.value.split(",").map(x=>x.trim()).filter(Boolean))];
+      if(list.join("|")===catModules(id).join("|")) return; saveSettings({categories:settings.categories.map(x=>x.id===id?{...x,modules:list}:x)}); toast("Modules saved");};
+    inp.onblur=commit; inp.onkeydown=e=>{if(e.key==="Enter"){e.preventDefault();inp.blur();}};});
+  m.querySelectorAll("[data-cstar]").forEach(b=>b.onclick=()=>{const id=b.dataset.cstar,f=settings.focus.includes(id)?settings.focus.filter(x=>x!==id):[...settings.focus,id];
+    saveSettings({focus:f,focusOnly:f.length?settings.focusOnly:false});});
+  m.querySelectorAll("[data-cdel]").forEach(b=>b.onclick=()=>{
+    if(!b.dataset.armed){b.dataset.armed="1";b.innerHTML=Number(b.dataset.n)?`Delete? ${b.dataset.n} leads lose it`:"Delete?";b.classList.add("danger");const html=b.innerHTML;setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.classList.remove("danger");b.innerHTML=ic("trash");}},4000);return;}
+    const id=b.dataset.cdel; saveSettings({categories:C.filter(c=>c.id!==id),focus:settings.focus.filter(x=>x!==id)}); toast("Category deleted");});
+  $("#focusOnly").onchange=e=>saveSettings({focusOnly:e.target.checked});
+  $("#defHour").onchange=e=>saveSettings({defaultHour:Number(e.target.value)});
+  $("#calOn").onchange=e=>saveSettings({calendar:{...settings.calendar,enabled:e.target.checked}});
+  $("#calRem").onchange=e=>saveSettings({calendar:{...settings.calendar,reminder:Number(e.target.value)}});
+  $("#calDur").onchange=e=>saveSettings({calendar:{...settings.calendar,duration:Number(e.target.value)}});
+  $("#expBtn").onclick=exportExcel;
+  const gd=$("#gDisc"); if(gd) gd.onclick=async()=>{gd.disabled=true;try{await LD.api("POST","/api/google/disconnect");toast("Google Calendar disconnected");}catch(e){toast(e.message);gd.disabled=false;}};
+  (async()=>{
+    const st=await LD.pushState().catch(()=>"unsupported"), d=$("#pushD"), b=$("#pushBtn"); if(!d||!d.isConnected) return;
+    const T={on:"On. Reminders arrive on this device.",off:"Off on this device.",denied:"Blocked. Allow notifications for Lead Diary in your phone's Settings.",unsupported:"This browser can't show notifications.","needs-install":"Add the app to your Home Screen first, then open it from there."};
+    d.textContent=T[st]||T.unsupported;
+    if(st==="on"||st==="off"){ b.hidden=false; b.textContent=st==="on"?"Turn off":"Turn on"; b.className="btn sm"+(st==="on"?"":" primary");
+      b.onclick=async()=>{ b.disabled=true;
+        try{ st==="on"?await LD.disablePush():await LD.enablePush(); toast(st==="on"?"Notifications off on this device":"Notifications on"); }
+        catch(e){ toast(e?.code==="denied"?"Notifications were not allowed.":"Couldn't change notifications: "+(e?.message||"try again")); }
+        renderAll(); }; }
+  })();
+  $("#pushTest").onclick=async()=>{try{const r=await LD.api("POST","/api/push/test");toast(r.sent?`Sent to ${r.sent} device${r.sent===1?"":"s"}`:"No device has notifications on yet.");}catch(e){toast(e.message);}};
+  $("#digest").onchange=e=>saveSettings({digestHour:Number(e.target.value)});
+  $("#speechLang").value=settings.speechLang||"en-IN"; $("#speechLang").onchange=e=>saveSettings({speechLang:e.target.value});
+  $("#impFile").onchange=async e=>{const f=e.target.files[0]; if(!f) return;
+    try{ const j=JSON.parse(await f.text()); if(!Array.isArray(j.leads)) throw {message:"That file isn't a Lead Diary backup."};
+      const r=await LD.api("POST","/api/import",{leads:j.leads,settings:j.settings}); toast(`Restored: ${r.added} new, ${r.updated} updated`); }
+    catch(err){ toast(err?.message||"That file isn't a Lead Diary backup."); }
+    e.target.value=""; };
+  $("#pwForm").onsubmit=async e=>{e.preventDefault();
+    try{ await LD.api("POST","/api/password",{current:$("#pwCur").value,password:$("#pwNew").value}); toast("Password changed. Other devices were signed out."); $("#pwCur").value=""; $("#pwNew").value=""; }
+    catch(err){ toast(err.message); } };
+  $("#logout").onclick=()=>LD.logout();
+}
+function addCategory(name){
+  const used=new Set(settings.categories.map(c=>c.slot)); let slot=0; while(used.has(slot)&&slot<8) slot++;
+  const c={id:"c"+Date.now().toString(36),name,slot};
+  saveSettings({categories:[...settings.categories,c]}); return c;
+}
+
+/* ============ Excel export ============ */
+function loadXLSX(){ return window.XLSX?Promise.resolve():new Promise((res,rej)=>{const s=document.createElement("script");s.src="/vendor/xlsx.full.min.js";s.onload=res;s.onerror=rej;document.head.appendChild(s);}); }
+async function exportExcel(){
+  if(!downloads){toast("Export isn't available right now. Reload the app and try again.");return;}
+  if(!leads.length){toast("No leads to export yet.");return;}
+  try{ await loadXLSX(); }catch{ toast("Couldn't load the Excel tool. Check your connection."); return; }
+  const fmt=s=>s&&!isNaN(new Date(s))?new Date(s):"";
+  const rows=leads.map(l=>({"Name":l.name,"Company":l.company,"Phone":l.phone,"Email":l.email,"Category":catName(l.category),"Status":statusLabel(l.status),"Temperature":l.temp,"Priority":OPEN(l.status)?PRIOS.find(x=>x.id===prioOf(l)).label:"","Priority reason":OPEN(l.status)?prioReason(l):"",
+    "Source":l.source,"Requirement":l.need,...(r=>({"Modules":r.modules.join(", "),"Users":r.users,"Labs / branches":r.sites,"Using now":r.current,"Timeline":r.timeline,"Decision maker":r.decision,"Integrations":r.integrations,"Deployment":r.deploy,"Requirement details":r.details}))(reqOf(l)),"Deal value (₹)":l.value||"","Next follow-up":fmt(l.nextAt),"Added on":fmt(l.createdAt),"Last updated":fmt(l.updatedAt),
+    "Last update":lastNote(l)?`${lastNote(l).type}: ${lastNote(l).text}`:"","Number of updates":(l.notes||[]).length}));
+  const acts=[]; leads.forEach(l=>(l.notes||[]).forEach(n=>acts.push({_t:new Date(n.at).getTime()||0,"Date":fmt(n.at),"Lead":l.name,"Company":l.company,"Category":catName(l.category),"Type":n.type,"Update":n.text,"Original voice text":n.raw||""})));
+  acts.sort((a,b)=>b._t-a._t); acts.forEach(a=>delete a._t);
+  const cats=settings.categories.map(c=>({"Category":c.name,"Starred":settings.focus.includes(c.id)?"Yes":"","Leads":leads.filter(l=>l.category===c.id).length}));
+  const wb=XLSX.utils.book_new();
+  const add=(data,name,widths)=>{const ws=XLSX.utils.json_to_sheet(data.length?data:[{}],{cellDates:true,dateNF:"dd-mmm-yyyy hh:mm AM/PM"});ws["!cols"]=widths.map(w=>({wch:w}));XLSX.utils.book_append_sheet(wb,ws,name);};
+  add(rows,"Leads",[22,22,16,24,14,12,11,10,40,18,32,30,10,18,18,18,18,20,12,50,14,20,20,20,50,10]);
+  add(acts,"Activity",[20,22,22,14,12,60,40]);
+  add(cats,"Categories",[20,10,8]);
+  const buf=XLSX.write(wb,{bookType:"xlsx",type:"array",cellDates:true});
+  try{
+    await downloads.save({filename:`Lead Diary backup ${dayKey(new Date())}.xlsx`,data:new Blob([buf])});
+    await saveSettings({lastBackupAt:new Date().toISOString()}); toast("Backup saved");
+  }catch(e){ toast(e?.code==="declined"?"Backup cancelled":"Couldn't save the file. Try again."); }
+}
+
+/* ============ Sheets ============ */
+function closeSheet(force){
+  if(!force&&formDirty&&!closeArmed){ closeArmed=true; toast("You have unsaved details. Tap Close again to discard them."); setTimeout(()=>closeArmed=false,3500); return false; }
+  stopDictation(); openId=null; formDirty=false; closeArmed=false; lastSheetSig=""; $("#sheetRoot").replaceChildren(); document.body.style.overflow=""; document.body.classList.remove("sheet-open");
+  if(opener&&opener.isConnected) opener.focus({preventScroll:true}); opener=null; return true;
+}
+function sheetShell(title,inner,{back="Close",dock=""}={}){
+  return `<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}">
+    <div class="sheet-bar"><button class="btn sm ghost" id="sheetX">${ic("back")}${back}</button><h3>${esc(title)}</h3><span style="width:70px"></span></div>
+    <div class="sheet-body">${inner}</div>${dock}</div></div>`;
+}
+function mountSheet(html,quiet){
+  $("#sheetRoot").innerHTML=html; if(quiet) $(".sheet").style.animation="none"; document.body.style.overflow="hidden"; document.body.classList.add("sheet-open");
+  $("#sheetX").onclick=()=>closeSheet();
+  $("#scrim").addEventListener("click",e=>{if(e.target.id==="scrim") closeSheet();});
+  if(!quiet) setTimeout(()=>{ if(!typingIn("#sheetRoot")) $("#sheetX")?.focus({preventScroll:true}); },50);
+}
+function renderSheet(){
+  if(!openId||openId.startsWith("__")) return;   // forms aren't rebuilt from live data
+  const l=getLead(openId); if(!l){closeSheet(true);return;}
+  if(JSON.stringify(l)+(calErr[openId]||"")===lastSheetSig) return;
+  if(typingIn("#sheetRoot")||dictating) return;   // don't disturb typing or dictation
+  const draft=$("#upd")?.value||"";
+  const keepScroll=$(".sheet")?.scrollTop||0;
+  openLead(openId,{draft,keepScroll,quiet:true});
+}
+
+/* ---- requirements: card, editor, AI fill ---- */
+function reqCardHTML(l){
+  const r=reqOf(l), pr=reqProgress(l), rows=[...REQ_FIELDS.filter(f=>r[f[0]]).map(f=>[f[1],r[f[0]]]),...(r.deploy?[["Deployment",r.deploy]]:[]),...(l.value?[["Budget",inr(l.value)]]:[])];
+  const empty=!l.need&&!r.modules.length&&!rows.length&&!r.details;
+  return `<div class="card pad req-card">
+    <div class="req-head"><span class="label">Requirements</span><span class="req-meter num">${pr.known}/${pr.total} known</span><button class="btn sm" id="reqEdit">${ic("edit")}Edit</button></div>
+    <div class="meter" role="img" aria-label="${pr.known} of ${pr.total} requirement details known"><i style="width:${pr.known/pr.total*100}%"></i></div>
+    ${empty?`<p class="muted" style="margin:0">Nothing recorded yet. Tap Edit, or let AI pick it up from your notes.</p>`:""}
+    ${l.need?`<p class="req-sum">${esc(l.need)}</p>`:""}
+    ${r.modules.length?`<div class="chips wrap">${r.modules.map(m=>`<span class="chip static">${esc(m)}</span>`).join("")}</div>`:""}
+    ${rows.length?`<dl class="kv">${rows.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>`:""}
+    ${r.details?`<div class="req-details">${esc(r.details)}</div>`:""}
+    ${pr.missing.length&&OPEN(l.status)?`<div class="req-missing"><b>Still to ask:</b> ${esc(pr.missing.map(k=>REQ_LABEL[k]).join(", "))}</div>`:""}
+    ${sample&&(l.notes||[]).length?`<button class="btn ai sm" id="reqAI" style="align-self:flex-start">${ic("spark")}Fill from conversation</button>`:""}
+  </div>`;
+}
+async function aiFillReq(id,btn){
+  const l=getLead(id); if(!l) return;
+  btn.disabled=true; btn.innerHTML=`${ic("spark")}Reading notes…`;
+  const notes=(l.notes||[]).slice(0,30).map(n=>`- ${toLocal(new Date(n.at))} ${n.type}: ${n.raw||n.text}`).join("\n");
+  try{
+    const r=await sample.json(`Extract the client's software requirements from a salesperson's notes. Notes may be Hindi, Hinglish or English. Write values in simple English.
+Lead: ${l.name}${l.company?", "+l.company:""}. Category: ${catName(l.category)}. Known modules for this category: ${catModules(l.category).join(", ")||"none"}.
+Already recorded: ${reqText(l).replace(/\n/g,"; ")||"nothing"}.
+Notes (newest first):
+${notes}
+
+Reply with only JSON: {"need":"one line summary of what they want","modules":["use the known module names where they fit"],"users":"","sites":"","current":"","timeline":"","decision":"","integrations":"","deploy":"Cloud|On-premise or empty","value":null,"details":"every other requirement point, as short lines"}
+Leave a field empty when the notes don't say it. Never invent. value is the budget in rupees only if stated.`,{modelTier:"quick",cache:false});
+    const cur=getLead(id)||l, nr=mergeReq(cur.req,r), patch={req:nr};
+    if(r.need&&!cur.need) patch.need=String(r.need);
+    if(Number(r.value)>0&&!cur.value) patch.value=Number(r.value);
+    const gained=reqProgress({...cur,...patch}).known-reqProgress(cur).known;
+    await patchLead(id,patch);
+    toast(gained>0?`AI filled ${gained} requirement detail${gained===1?"":"s"}`:"No new requirement details found in the notes");
+  }catch(e){ toast(aiErr(e)); }
+  if(btn.isConnected){btn.disabled=false;btn.innerHTML=`${ic("spark")}Fill from conversation`;}
+}
+function openReq(id){
+  const l=getLead(id); if(!l) return;
+  const r=reqOf(l); openId="__req:"+id; formDirty=false; closeArmed=false;
+  let mods=[...r.modules]; const sugg=[...new Set([...catModules(l.category),...mods])];
+  const inner=`<form class="card pad" id="reqForm" style="display:flex;flex-direction:column;gap:14px">
+    <label class="field"><span>Requirement in short</span><input class="input" id="rNeed" value="${esc(l.need)}" placeholder="e.g. LIMS for 3 food testing labs"></label>
+    <div class="field"><span>Modules / features</span><div class="chips wrap" id="modPick">${sugg.map(m=>`<button type="button" class="chip" data-mod="${esc(m)}" aria-pressed="${mods.includes(m)}">${esc(m)}</button>`).join("")}<button type="button" class="chip" id="modNewBtn">${ic("plus")}Other</button></div>
+      <div id="modNewRow" hidden style="display:flex;gap:8px"><input class="input" id="modNew" placeholder="Module or feature"><button type="button" class="btn" id="modAdd">Add</button></div></div>
+    <div class="grid2">${REQ_FIELDS.map(([k,lab,ph])=>`<label class="field"><span>${lab}</span><input class="input" id="r_${k}" value="${esc(r[k])}" placeholder="${esc(ph)}"></label>`).join("")}
+      <label class="field"><span>Budget (₹)</span><input class="input num" id="rValue" inputmode="numeric" value="${esc(l.value||"")}"></label>
+      <div class="field"><span>Cloud or on-premise</span><div class="seg" id="depSeg">${DEPLOY.map(d=>`<button type="button" data-dep="${d}" aria-pressed="${r.deploy===d}">${d}</button>`).join("")}</div></div></div>
+    <label class="field"><span>Requirement details</span><div class="mic-wrap"><textarea class="input" id="rDetails" style="min-height:140px" placeholder="Write or speak the full requirement: workflows, reports they need, pain points, special requests…">${esc(r.details)}</textarea>
+      <button class="mic" type="button" data-mic="rDetails" aria-label="Speak">${ic("mic")}</button></div></label>
+    <div id="micHint-rDetails"></div>
+    <button class="btn primary" type="submit" style="height:48px">Save requirements</button></form>`;
+  mountSheet(sheetShell("Requirements",inner,{back:"Back"}));
+  $("#sheetX").onclick=()=>{ if(!formDirty||closeArmed){formDirty=false;openLead(id);} else closeSheet(); };
+  wireMic();
+  let dep=r.deploy;
+  const wireMods=()=>$("#modPick").querySelectorAll("[data-mod]").forEach(b=>b.onclick=()=>{const m=b.dataset.mod;mods=mods.includes(m)?mods.filter(x=>x!==m):[...mods,m];b.setAttribute("aria-pressed",mods.includes(m));formDirty=true;});
+  wireMods();
+  $("#modNewBtn").onclick=()=>{$("#modNewRow").hidden=false;$("#modNew").focus();};
+  $("#modAdd").onclick=()=>{const v=$("#modNew").value.trim(); if(!v) return; if(!mods.includes(v)) mods.push(v);
+    if(!$(`#modPick [data-mod="${CSS.escape(v)}"]`)){const c=document.createElement("button");c.type="button";c.className="chip";c.dataset.mod=v;c.textContent=v;$("#modNewBtn").before(c);}
+    $(`#modPick [data-mod="${CSS.escape(v)}"]`).setAttribute("aria-pressed","true"); wireMods(); $("#modNew").value=""; $("#modNewRow").hidden=true; formDirty=true;};
+  $("#depSeg").querySelectorAll("[data-dep]").forEach(b=>b.onclick=()=>{dep=dep===b.dataset.dep?"":b.dataset.dep;$("#depSeg").querySelectorAll("[data-dep]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.dep===dep));formDirty=true;});
+  $("#reqForm").onsubmit=async e=>{
+    e.preventDefault();
+    const req={...Object.fromEntries(REQ_FIELDS.map(([k])=>[k,$("#r_"+k).value.trim()])),deploy:dep,modules:mods,details:$("#rDetails").value.trim()};
+    try{ await patchLead(id,{req,need:$("#rNeed").value.trim(),value:Number(String($("#rValue").value).replace(/[^\d.]/g,""))||null}); formDirty=false; openLead(id); toast("Requirements saved"); }
+    catch{ toast("Couldn't save. Check your connection and try again."); }
+  };
+}
+
+/* ---- lead form (new + edit) ---- */
+function openForm(existing){
+  const l=existing?normalize(existing):normalize({nextAt:quickDate("3h")});
+  if(!existing){const d=new Date();d.setHours(d.getHours()+1,0,0,0);l.nextAt=toLocal(d);}
+  if(!existing) opener=document.activeElement;
+  openId=existing?"__edit:"+existing.id:"__new"; formDirty=false; closeArmed=false;
+  const sources=[...new Set(leads.map(x=>x.source).filter(Boolean))];
+  const inner=`
+    ${existing?"":`<div class="card pad composer">
+      <span class="label">Quick fill</span>
+      <div class="mic-wrap"><textarea class="input" id="raw" placeholder="Paste the WhatsApp message, or tap the mic key on your keyboard and say the lead details"></textarea>
+        <button class="mic" type="button" data-mic="raw" aria-label="Speak">${ic("mic")}</button></div>
+      <div id="micHint-raw"></div>
+      ${sample?`<button class="btn ai" type="button" id="fillAI">${ic("spark")}Fill the form with AI</button>`:""}
+    </div>`}
+    <form class="card pad" id="leadForm" style="display:flex;flex-direction:column;gap:14px">
+      <div class="grid2">
+        <label class="field"><span>Name *</span><input class="input" id="fName" required value="${esc(l.name)}" autocomplete="off"></label>
+        <label class="field"><span>Phone / WhatsApp</span><input class="input num" id="fPhone" inputmode="tel" value="${esc(l.phone)}" autocomplete="off"></label>
+      </div>
+      <div id="dupe"></div>
+      <label class="field"><span>Company</span><input class="input" id="fCompany" value="${esc(l.company)}" autocomplete="off"></label>
+      <div class="field"><span>Category *</span>
+        <div class="chips wrap" id="catPick">${settings.categories.map(c=>`<button type="button" class="chip" data-pick="${c.id}" aria-pressed="${l.category===c.id}"><span class="dot" style="background:${catColor(c.id)}"></span>${esc(c.name)}</button>`).join("")}
+          <button type="button" class="chip" id="newCatChip">${ic("plus")}New</button></div>
+        <div id="newCatRow" hidden style="display:flex;gap:8px"><input class="input" id="newCatIn" placeholder="Category name"><button type="button" class="btn" id="newCatAdd">Add</button></div>
+      </div>
+      <label class="field"><span>Requirement in short</span><input class="input" id="fNeed" value="${esc(l.need)}" placeholder="e.g. LIMS for 3 labs"></label>
+      ${existing?"":`<label class="field"><span>First note</span><textarea class="input" id="fNote" style="min-height:70px" placeholder="What did they ask?"></textarea></label>
+      <div class="field"><span>First follow-up</span>
+        <div class="chips">${QUICK().map(([k,t])=>`<button type="button" class="chip" data-q="${k}">${t}</button>`).join("")}</div>
+        <input class="input" id="fNext" type="datetime-local" value="${esc(l.nextAt)}"></div>`}
+      <details class="more" ${existing?"open":""}><summary>${ic("plus")}More details: email, source, deal value, stage</summary>
+        <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="grid2">
+          <label class="field"><span>Email</span><input class="input" id="fEmail" type="email" value="${esc(l.email)}" autocomplete="off"></label>
+          <label class="field"><span>Source</span><input class="input" id="fSource" list="srcList" placeholder="e.g. Facebook ad" value="${esc(l.source)}"></label>
+          <label class="field"><span>Deal value (₹)</span><input class="input num" id="fValue" inputmode="numeric" value="${esc(l.value||"")}"></label>
+          <label class="field"><span>Stage</span><select class="input" id="fStatus">${STATUSES.map(s=>`<option value="${s.id}" ${l.status===s.id?"selected":""}>${s.label}</option>`).join("")}</select></label>
+        </div>
+        <datalist id="srcList">${sources.map(s=>`<option value="${esc(s)}">`).join("")}</datalist>
+        ${existing?"":`<label class="field"><span>Requirement details</span><textarea class="input" id="fDetails" style="min-height:80px" placeholder="Modules, users, branches, current software, timeline…"></textarea></label>`}
+        <div class="field"><span>Temperature</span><div class="seg" id="tempSeg">${TEMPS.map(t=>`<button type="button" data-temp="${t.id}" aria-pressed="${l.temp===t.id}">${t.label}</button>`).join("")}</div></div>
+        </div>
+      </details>
+      <button class="btn primary" type="submit" style="height:48px">${existing?"Save changes":"Save lead"}</button>
+    </form>`;
+  mountSheet(sheetShell(existing?"Edit lead":"New lead",inner,{back:existing?"Back":"Close"}));
+  if(existing) $("#sheetX").onclick=()=>{ if(!formDirty||closeArmed){formDirty=false;openLead(existing.id);} else closeSheet(); };
+  let cat=l.category, temp=l.temp;
+  const wirePick=()=>$("#catPick").querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{cat=cat===b.dataset.pick?"":b.dataset.pick;$("#catPick").querySelectorAll("[data-pick]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.pick===cat));});
+  wirePick();
+  $("#newCatChip").onclick=()=>{$("#newCatRow").hidden=false;$("#newCatIn").focus();};
+  $("#newCatAdd").onclick=()=>{const v=$("#newCatIn").value.trim();if(!v)return;const c=settings.categories.find(c=>c.name.toLowerCase()===v.toLowerCase())||addCategory(v);cat=c.id;
+    const chip=document.createElement("button");chip.type="button";chip.className="chip";chip.dataset.pick=c.id;chip.innerHTML=`<span class="dot" style="background:${catColor(c.id)}"></span>${esc(c.name)}`;
+    if(!$(`[data-pick="${c.id}"]`)) $("#newCatChip").before(chip); wirePick(); $("#catPick").querySelectorAll("[data-pick]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.pick===cat));
+    $("#newCatRow").hidden=true;$("#newCatIn").value="";};
+  $("#tempSeg").querySelectorAll("[data-temp]").forEach(b=>b.onclick=()=>{temp=temp===b.dataset.temp?"":b.dataset.temp;$("#tempSeg").querySelectorAll("[data-temp]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.temp===temp));});
+  document.querySelectorAll("#leadForm [data-q]").forEach(b=>b.onclick=()=>{$("#fNext").value=quickDate(b.dataset.q);});
+  wireMic();
+  let dupePhone=null, dupeAck=false, aiReq=null;
+  const checkDupe=()=>{const box=$("#dupe"); if(!box) return;
+    const v=last10($("#fPhone").value), co=normCo($("#fCompany").value);
+    const d=v.length===10?leads.find(x=>x.id!==existing?.id&&last10(x.phone)===v):null;
+    const same=co.length>=3?leads.filter(x=>x.id!==existing?.id&&x!==d&&normCo(x.company)===co).slice(0,4):[];
+    if(d!==dupePhone) dupeAck=false; dupePhone=d;
+    box.innerHTML=(d?`<div class="dupe"><span>This number is already saved as <b>${esc(d.name)}</b>${d.company?" · "+esc(d.company):""} (${esc(statusLabel(d.status))})</span>
+        <span style="display:flex;gap:6px;flex-wrap:wrap">${existing?"":`<button type="button" class="btn sm primary" id="mergeDupe">Add as update there</button>`}<button type="button" class="btn sm" id="openDupe">Open</button></span></div>`:"")
+      +(same.length?`<div class="dupe soft"><span>Same company: ${same.map(x=>`<button type="button" class="linkish" data-sameco="${esc(x.id)}">${esc(x.name)}</button>`).join(", ")}. A new contact there is fine, just check it isn't the same person.</span></div>`:"");
+    if(d){ $("#openDupe").onclick=()=>{formDirty=false;closeSheet(true);openLead(d.id);};
+      const mg=$("#mergeDupe"); if(mg) mg.onclick=async()=>{
+        const t=($("#fNote")?.value||"").trim()||($("#raw")?.value||"").trim(), now=new Date().toISOString(), cur=getLead(d.id);
+        const patch={notes:[{at:now,type:"WhatsApp",text:t?"New enquiry: "+t:"Contacted again from a new enquiry."},...(cur.notes||[])]};
+        const nx=$("#fNext")?.value; if(nx&&OPEN(cur.status)&&(!cur.nextAt||nx<cur.nextAt)) patch.nextAt=nx;
+        if(!OPEN(cur.status)) patch.status="contacted";
+        try{ await patchLead(d.id,patch); formDirty=false; closeSheet(true); openLead(d.id); toast(`Added to ${cur.name}'s history`); if(patch.nextAt||patch.status) queueCal(d.id); }
+        catch{ toast("Couldn't save. Try again."); } }; }
+    box.querySelectorAll("[data-sameco]").forEach(x=>x.onclick=()=>{formDirty=false;closeSheet(true);openLead(x.dataset.sameco);});
+  };
+  $("#fCompany").addEventListener("input",()=>{clearTimeout(checkDupe.t);checkDupe.t=setTimeout(checkDupe,250);});
+  $("#fPhone").addEventListener("input",checkDupe);
+  const raw=$("#raw");
+  if(raw) raw.addEventListener("input",()=>{const t=raw.value;const ph=t.match(/(\+?\d[\d\s-]{8,}\d)/);if(ph&&!$("#fPhone").value){$("#fPhone").value=ph[1].replace(/[\s-]/g,"");checkDupe();}});
+  const fb=$("#fillAI");
+  if(fb) fb.onclick=async()=>{
+    const t=raw.value.trim(); if(!t){toast("Paste or speak the lead details first.");raw.focus();return;}
+    fb.disabled=true; fb.innerHTML=`${ic("spark")}Reading…`;
+    try{
+      const r=await aiParseLead(t)||{};
+      const set=(id,v)=>{if(v&&!$(id).value) $(id).value=v;};
+      set("#fName",r.name);set("#fCompany",r.company);set("#fPhone",r.phone);set("#fEmail",r.email);set("#fSource",r.source);set("#fNeed",r.need);
+      if(r.value&&!$("#fValue").value) $("#fValue").value=r.value;
+      if(!$("#fNote").value) $("#fNote").value=r.note||"";
+      const c=resolveCat(r.category); if(c&&!cat){cat=c;$("#catPick").querySelectorAll("[data-pick]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.pick===cat));}
+      if(["hot","warm","cold"].includes(r.temp)&&!temp){temp=r.temp;$("#tempSeg").querySelectorAll("[data-temp]").forEach(x=>x.setAttribute("aria-pressed",x.dataset.temp===temp));}
+      const w=validWhen(r.followUp); if(w) $("#fNext").value=w;
+      aiReq=r.req&&typeof r.req==="object"?r.req:null;
+      if(r.details&&$("#fDetails")&&!$("#fDetails").value) $("#fDetails").value=r.details;
+      if(r.email||r.source||r.value||r.details) $("details.more").open=true;
+      checkDupe();
+      toast(cat?"Filled. Check and save.":"Filled. Pick a category and save.");
+    }catch(e){toast(aiErr(e));}
+    fb.disabled=false; fb.innerHTML=`${ic("spark")}Fill the form with AI`;
+  };
+  $("#leadForm").onsubmit=async e=>{
+    e.preventDefault();
+    if(!cat&&settings.categories.length){toast("Pick a category so this lead lands in the right list.");$("#catPick").scrollIntoView({block:"center",behavior:"smooth"});return;}
+    checkDupe();
+    if(dupePhone&&!dupeAck){ dupeAck=true; toast("This number is already saved. Tap Save again to add it anyway."); $("#dupe").scrollIntoView({block:"center",behavior:"smooth"}); return; }
+    const now=new Date().toISOString();
+    const fields={name:$("#fName").value.trim(),company:$("#fCompany").value.trim(),phone:$("#fPhone").value.trim(),email:$("#fEmail").value.trim(),
+      category:cat,source:$("#fSource").value.trim(),need:$("#fNeed").value.trim(),value:Number(String($("#fValue").value).replace(/[^\d.]/g,""))||null,
+      temp,status:$("#fStatus").value};
+    const btn=e.submitter||$("#leadForm button[type=submit]"); btn.disabled=true;
+    try{
+      if(existing){
+        const id=existing.id, cur=getLead(id)||existing;
+        if(fields.status!==cur.status&&!OPEN(fields.status)){fields.closedAt=now;fields.nextAt="";}
+        await patchLead(id,fields); formDirty=false;
+        openLead(id); toast("Saved"); queueCal(id);
+      } else {
+        const note=$("#fNote").value.trim(), rawText=$("#raw")?.value.trim()||"";
+        fields.req=mergeReq(aiReq,{details:$("#fDetails")?.value.trim()||""});
+        const data={...strip(l),...fields,nextAt:OPEN(fields.status)?$("#fNext").value:"",createdAt:now,
+          notes:note||rawText?[{at:now,type:"First message",text:note||rawText,...(rawText&&note&&rawText!==note?{raw:rawText}:{})}]:[]};
+        const id=uid(); await createLead(id,data); formDirty=false;
+        closeSheet(true); toast(`${data.name} added`+(data.nextAt?` · follow-up ${whenStr(data.nextAt)}`:"")); queueCal(id);
+      }
+    }catch(err){toast("Couldn't save. Check your connection and try again."); btn.disabled=false;}
+  };
+  if(!existing) setTimeout(()=>$("#raw")?.focus(),250);
+}
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let dictating=null;
+function stopDictation(){ try{ dictating?.rec.stop(); }catch{} }
+function wireMic(){
+  document.querySelectorAll("[data-mic]").forEach(b=>b.onclick=()=>{
+    const id=b.dataset.mic, ta=$("#"+id), h=$("#micHint-"+id);
+    if(dictating){ const same=dictating.id===id; stopDictation(); if(same) return; }
+    if(!SR){ ta.focus(); if(h) h.innerHTML=`<div class="hint">Tap the microphone key on your keyboard and speak. On a Mac, press Fn (Globe) twice. Hindi or English both work.</div>`; return; }
+    const rec=new SR(); rec.lang=settings.speechLang||"en-IN"; rec.interimResults=true; rec.continuous=true;
+    const base=ta.value.trim()?ta.value.replace(/\s*$/," "):""; let fin="";
+    dictating={id,rec,btn:b};
+    rec.onresult=e=>{ let interim="";
+      for(let i=e.resultIndex;i<e.results.length;i++){ const r=e.results[i]; if(r.isFinal) fin+=r[0].transcript.trim()+" "; else interim+=r[0].transcript; }
+      const t=$("#"+id); if(t){ t.value=base+fin+interim; if(t.closest("#leadForm,#raw,#reqForm")||t.id==="raw") formDirty=true; } };
+    rec.onerror=e=>{ if(e.error==="not-allowed"||e.error==="service-not-allowed") toast("Allow the microphone for Lead Diary, or use the mic key on your keyboard.");
+      else if(e.error!=="aborted"&&e.error!=="no-speech") toast("Couldn't hear that. Try again."); };
+    rec.onend=()=>{ const bb=dictating?.btn; dictating=null;
+      if(bb?.isConnected){ bb.classList.remove("rec"); bb.setAttribute("aria-label","Speak"); }
+      const hh=$("#micHint-"+id); if(hh) hh.innerHTML="";
+      if(renderDirty&&!typingIn("#main")){ renderDirty=false; renderAll(); }
+      if(openId&&!openId.startsWith("__")) renderSheet(); };
+    try{ rec.start(); }catch{ dictating=null; return; }
+    b.classList.add("rec"); b.setAttribute("aria-label","Stop listening");
+    if(h) h.innerHTML=`<div class="hint">Listening… speak now. Tap the mic again when you're done.</div>`;
+  });
+}
+
+/* ---- lead detail ---- */
+function openLead(id,{draft="",keepScroll=0,quiet=false}={}){
+  const l=getLead(id); if(!l) return;
+  if(!quiet){ sheetState={id,type:"Call",typeTouched:false,next:null}; opener=document.activeElement; }
+  openId=id; formDirty=false; closeArmed=false; lastSheetSig=JSON.stringify(l)+(calErr[id]||"");
+  const wa=waLink(l.phone), tel=telLink(l.phone), notes=l.notes||[], last=lastNote(l);
+  const b=bucket(l);
+  const G=window.LD?.server().google||{};
+  const calLine=!G.connected||!settings.calendar.enabled?"":l.calErr&&l.calErr!=="retry"?`<div class="cal-state err">${ic("alert")}<span>${esc(l.calErr)}</span> <button class="btn sm" id="calRetry">Retry</button></div>`
+    :l.calEventId&&l.nextAt?`<div class="cal-state ok">${ic("check")}In Google Calendar · reminder ${Number(settings.calendar.reminder)?settings.calendar.reminder+" min before":"at the time"}</div>`
+    :l.nextAt&&OPEN(l.status)?`<div class="cal-state">${ic("cal")}Adding to Google Calendar… <button class="btn sm" id="calRetry">Retry</button></div>`:"";
+  const inner=`
+    <div class="hero"><span class="av" style="background:${catColor(l.category)}">${esc(initials(l.name))}</span>
+      <div style="min-width:0"><h2>${esc(l.name||"Unnamed")}</h2><div class="co">${esc([l.company,catName(l.category)].filter(Boolean).join(" · "))}</div></div></div>
+    <div class="meta-row">
+      <select class="select-pill" id="dStatus" aria-label="Stage">${STATUSES.map(s=>`<option value="${s.id}" ${l.status===s.id?"selected":""}>${s.label}</option>`).join("")}</select>
+      <div class="seg" id="dTemp">${TEMPS.map(t=>`<button data-temp="${t.id}" aria-pressed="${l.temp===t.id}">${t.label}</button>`).join("")}</div>
+      ${l.value?`<span class="pill num">${inr(l.value)}</span>`:""}
+    </div>
+    ${OPEN(l.status)?`<div class="prio-box"><div class="prio-head"><span class="label">Priority</span>
+        <div class="seg" id="dPrio"><button data-prio="" aria-pressed="${!l.prio}">Auto${!l.prio?" · "+esc(PRIOS.find(x=>x.id===autoPrio(l).level).label):""}</button>${PRIOS.map(x=>`<button data-prio="${x.id}" aria-pressed="${l.prio===x.id}">${x.label}</button>`).join("")}</div></div>
+      <div class="prio-why"><span class="pdot ${prioOf(l)}"></span>${esc(prioReason(l))}</div></div>`:""}
+    <div class="recency">${last?`Last contact ${esc(agoStr(last.at))}`:"Not contacted yet"} · added ${esc(agoStr(l.createdAt))}${l.source?" from "+esc(l.source):""}</div>
+    ${l.phone?`<div class="card pad"><div class="phone-line"><span class="num">${esc(l.phone)}</span><button class="btn sm" id="copyPh">${ic("copy")}Copy</button></div></div>`:""}
+
+    ${OPEN(l.status)?`<div class="card pad fu">
+      <span class="label">Next follow-up</span>
+      <div class="fu-when"><b class="${b==="over"?"due over":b==="today"?"due today":""}" style="font-size:18px">${l.nextAt?esc(whenStr(l.nextAt)):"Not set"}</b>${b==="over"?`<span class="pill" style="background:var(--red-soft);color:var(--red)">${esc(dueStr(l.nextAt))}</span>`:""}</div>
+      <div class="chips">${QUICK().map(([k,t])=>`<button class="chip" data-fq="${k}">${t}</button>`).join("")}
+        ${l.nextAt?`<button class="chip" data-fq="clear">Clear</button>`:""}</div>
+      <input class="input" id="dNext" type="datetime-local" value="${esc(l.nextAt)}" aria-label="Pick date and time">
+      ${calLine}
+    </div>`:""}
+
+    <div class="card pad composer">
+      <span class="label">Log an update</span>
+      <div class="mic-wrap"><textarea class="input" id="upd" placeholder="What happened? Tap the mic key on your keyboard and just say it, e.g. “Spoke to him, wants a demo on Monday at 4, budget around 2 lakh”">${esc(draft)}</textarea>
+        <button class="mic" type="button" data-mic="upd" aria-label="Speak">${ic("mic")}</button></div>
+      <div id="micHint-upd"></div>
+      <div class="chips" id="typePick">${NOTE_TYPES.map(t=>`<button class="chip" data-type="${t}" aria-pressed="${sheetState.type===t}">${t}</button>`).join("")}</div>
+      ${OPEN(l.status)?`<div class="quick"><button class="btn sm" data-quick="noans">${ic("phone")}No answer, retry tomorrow</button><button class="btn sm" data-quick="sent">${ic("wa")}Sent details, follow up in 2 days</button></div>`:""}
+      <div class="split">${sample?`<button class="btn primary" id="saveAI">${ic("spark")}Save with AI</button><button class="btn" id="savePlain">Save as is</button>`:`<button class="btn primary" id="savePlain">Save update</button>`}</div>
+      ${sample?`<p class="sub" style="margin:0;font-size:12.5px">Save with AI cleans up your words, and sets the stage and next follow-up if you mention them.</p>`:""}
+    </div>
+
+    ${reqCardHTML(l)}
+    ${sample?`<div class="card pad" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span class="label">AI assistant</span>
+        <div class="seg" id="langSeg">${["English","Hinglish"].map(x=>`<button data-lang="${x}" aria-pressed="${msgLang()===x}">${x}</button>`).join("")}</div></div>
+      <button class="btn ai" id="nextAI" style="height:44px">${ic("spark")}Suggest next step and a message</button><div id="nextOut"></div></div>`:""}
+    <div class="card pad"><span class="label">History · ${notes.length}</span>
+      ${notes.length?`<ol class="timeline" style="margin-top:12px">${notes.map(n=>`<li><span class="pt"></span><div><div class="th"><b>${esc(n.type)}</b><span class="muted">${esc(whenStr(n.at))}</span></div>${n.text?`<p>${esc(n.text)}</p>`:""}
+        ${n.raw?`<details><summary>What you said</summary>${esc(n.raw)}</details>`:""}</div></li>`).join("")}</ol>`:`<p class="muted" style="margin:8px 0 0">No updates yet. Log your first conversation above.</p>`}
+    </div>
+
+    <div class="card pad"><div style="display:flex;justify-content:space-between;align-items:center"><span class="label">Details</span><button class="btn sm" id="editBtn">${ic("edit")}Edit</button></div>
+      <dl class="kv" style="margin:12px 0 0">
+        <dt>Source</dt><dd>${esc(l.source||"–")}</dd>
+        ${l.email?`<dt>Email</dt><dd>${esc(l.email)}</dd>`:""}
+        <dt>Added</dt><dd>${esc(whenStr(l.createdAt)||"–")}</dd>
+      </dl></div>
+    <button class="btn danger" id="delBtn" style="height:44px">${ic("trash")}Delete lead</button>`;
+  const dock=`<div class="dock">${wa?`<a class="btn wa" href="${wa}" target="_blank" rel="noopener">${ic("wa")}WhatsApp</a>`:`<button class="btn" disabled>${ic("wa")}WhatsApp</button>`}
+    ${tel?`<a class="btn" href="${tel}">${ic("phone")}Call</a>`:`<button class="btn" disabled>${ic("phone")}Call</button>`}
+    <button class="btn primary" id="dockLog">${ic("mic")}Log update</button></div>`;
+  mountSheet(sheetShell(l.name||"Lead",inner,{dock}),quiet);
+  $("#dockLog").onclick=()=>{const u=$("#upd");u.scrollIntoView({block:"center",behavior:"smooth"});u.focus({preventScroll:true});};
+  document.querySelectorAll("#langSeg [data-lang]").forEach(b=>b.onclick=()=>{try{localStorage.setItem("ld.lang",b.dataset.lang);}catch{} document.querySelectorAll("#langSeg [data-lang]").forEach(x=>x.setAttribute("aria-pressed",x===b));});
+  if(keepScroll) $(".sheet").scrollTop=keepScroll;
+  wireMic();
+
+  const save=async(patch,msg)=>{
+    const cur=getLead(id); if(!cur) return false;
+    const p={...patch};
+    if(p.status&&p.status!==cur.status&&!OPEN(p.status)){p.closedAt=new Date().toISOString();p.nextAt="";}
+    try{ await patchLead(id,p); if(msg) toast(msg); if("nextAt" in p||"status" in p) queueCal(id); return true; }
+    catch(e){ toast("Couldn't save. Check your connection and try again."); return false; }
+  };
+  $("#dStatus").onchange=e=>save({status:e.target.value},`Stage: ${statusLabel(e.target.value)}`);
+  document.querySelectorAll("#dPrio [data-prio]").forEach(b=>b.onclick=()=>{const v=b.dataset.prio;
+    save(v?{prio:v,prioBy:"you",prioWhy:""}:{prio:"",prioBy:"",prioWhy:""},v?`Priority: ${PRIOS.find(x=>x.id===v).label}`:"Priority: automatic");});
+  $("#dTemp").querySelectorAll("[data-temp]").forEach(b=>b.onclick=()=>save({temp:getLead(id)?.temp===b.dataset.temp?"":b.dataset.temp}));
+  document.querySelectorAll("[data-fq]").forEach(b=>b.onclick=()=>{const v=b.dataset.fq==="clear"?"":quickDate(b.dataset.fq);save({nextAt:v},v?`Follow-up: ${whenStr(v)}`:"Follow-up cleared");});
+  const dn=$("#dNext"); if(dn) dn.onchange=e=>save({nextAt:e.target.value},e.target.value?`Follow-up: ${whenStr(e.target.value)}`:"Follow-up cleared");
+  const cr=$("#calRetry"); if(cr) cr.onclick=()=>{cr.disabled=true;LD.api("POST","/api/cal/retry/"+encodeURIComponent(id)).catch(e=>{toast(e.message||"Couldn't reach the server.");if(cr.isConnected)cr.disabled=false;});};
+  const cp=$("#copyPh"); if(cp) cp.onclick=()=>navigator.clipboard.writeText(l.phone).then(()=>toast("Number copied"),()=>{const r=document.createRange();r.selectNodeContents($(".phone-line .num"));const s=getSelection();s.removeAllRanges();s.addRange(r);toast("Number selected. Copy it from the menu.");});
+  $("#typePick").querySelectorAll("[data-type]").forEach(b=>b.onclick=()=>{sheetState.type=b.dataset.type;sheetState.typeTouched=true;$("#typePick").querySelectorAll("[data-type]").forEach(x=>x.setAttribute("aria-pressed",x===b));});
+  const addNote=async(note,patch,msg,clear=true)=>{
+    const cur=normalize(getLead(id)||l);
+    const p={...patch,notes:[note,...(cur.notes||[])]};
+    if(cur.status==="new"&&!p.status&&note.type!=="No answer") p.status="contacted";
+    if(await save(p,msg)&&clear){ const u=$("#upd"); if(u) u.value=""; sheetState.typeTouched=false; }
+  };
+  document.querySelectorAll("[data-quick]").forEach(b=>b.onclick=()=>{
+    const no=b.dataset.quick==="noans", nx=quickDate(no?"1":"2");
+    addNote({at:new Date().toISOString(),type:no?"No answer":"WhatsApp",text:no?"Didn't pick up.":"Sent details on WhatsApp."},{nextAt:nx},`Logged · next follow-up ${whenStr(nx)}`,false);
+  });
+  $("#savePlain").onclick=async()=>{
+    const t=$("#upd").value.trim(); if(!t&&type!=="No answer"){toast("Type or speak the update first.");$("#upd").focus();return;}
+    const type=sheetState.type, patch={}; if(type==="No answer"&&OPEN(getLead(id)?.status)) patch.nextAt=quickDate("1");
+    await addNote({at:new Date().toISOString(),type,text:t},patch,patch.nextAt?`Saved · try again ${whenStr(patch.nextAt)}`:"Update saved");
+  };
+  const sa=$("#saveAI"); if(sa) sa.onclick=async()=>{
+    const t=$("#upd").value.trim(); if(!t){toast("Type or speak the update first.");$("#upd").focus();return;}
+    sa.disabled=true; sa.innerHTML=`${ic("spark")}Understanding…`;
+    try{
+      const cur=getLead(id)||l; const r=await aiParseUpdate(cur,t)||{};
+      const patch={}, bits=[];
+      const st=STATUSES.find(s=>s.id===r.status); if(st&&st.id!==cur.status){patch.status=st.id;bits.push("Stage: "+st.label);}
+      const w=validWhen(r.followUp); if(w&&OPEN(patch.status||cur.status)){patch.nextAt=w;bits.push("Next: "+whenStr(w));}
+      if(["hot","warm","cold"].includes(r.temp)&&r.temp!==cur.temp){patch.temp=r.temp;}
+      if(Number(r.value)>0){patch.value=Number(r.value);bits.push("Value: "+inr(r.value));}
+      if(r.need&&!cur.need) patch.need=r.need;
+      const before=reqText(cur), nr=mergeReq(cur.req,r.req,{overwrite:true}); if(JSON.stringify(nr)!==JSON.stringify(reqOf(cur))){patch.req=nr; if(reqText({req:nr})!==before) bits.push("Requirements updated");}
+      const nt=sheetState.typeTouched||!NOTE_TYPES.includes(r.type)?sheetState.type:r.type;
+      const clean=String(r.note||"").trim()||t;
+      await addNote({at:new Date().toISOString(),type:nt,text:clean,...(clean!==t?{raw:t}:{})},patch,"Saved"+(bits.length?" · "+bits.join(" · "):""));
+    }catch(e){ toast(aiErr(e)); }
+    if(sa.isConnected){sa.disabled=false; sa.innerHTML=`${ic("spark")}Save with AI`;}
+  };
+  const showNext=r=>{const out=$("#nextOut"); if(!out||!r) return;
+      out.innerHTML=`<div class="aibox" style="padding:12px 0 0"><div class="out"><b>Where it stands:</b> ${esc(r.summary||"")}\n<b>Do next:</b> ${esc(r.next||"")}</div>
+        ${r.message?`<div class="card pad" style="background:var(--surface-2);box-shadow:none"><div class="out" id="msgTxt">${esc(r.message)}</div></div>
+        <div class="split"><button class="btn" id="cpMsg">${ic("copy")}Copy message</button>${wa?`<a class="btn wa" href="${wa}?text=${encodeURIComponent(r.message)}" target="_blank" rel="noopener">${ic("wa")}Send on WhatsApp</a>`:""}</div>`:""}</div>`;
+      const cm=$("#cpMsg"); if(cm) cm.onclick=()=>navigator.clipboard.writeText(r.message).then(()=>toast("Message copied"),()=>toast("Select the message and copy it"));};
+  showNext(sheetState.next);
+  const na=$("#nextAI"); if(na) na.onclick=async()=>{
+    const out=$("#nextOut"); out.innerHTML=`<div class="aibox" style="padding:12px 0 0"><div class="out">Thinking…</div></div>`;
+    na.disabled=true;
+    const hist=(l.notes||[]).slice(0,8).map(n=>`- ${toLocal(new Date(n.at))} ${n.type}: ${n.text}`).join("\n")||"(no contact yet)";
+    try{
+      const r=await sample.json(`You help a software salesperson close deals. ${nowContext()}
+Lead: ${l.name}${l.company?", "+l.company:""}. Product category: ${catName(l.category)}. Stage: ${l.status}. Temperature: ${l.temp||"unknown"}. Needs: ${l.need||"unknown"}. Value: ${l.value||"unknown"}.
+Requirements known: ${reqText(l).replace(/\n/g,"; ")||"none"}. Still unknown: ${reqProgress(l).missing.map(k=>REQ_LABEL[k]).join(", ")||"nothing"}. Next follow-up: ${l.nextAt||"not set"}.
+History (newest first):
+${hist}
+
+Reply with only JSON: {"summary":"one sentence on where this lead stands","next":"the single best next action, specific; if key requirements are still unknown, say which to ask","message":"a short friendly WhatsApp message to send now, in ${msgLang()==="Hinglish"?"Hinglish (Hindi written in English letters, the way people chat in India)":"simple English"}, under 50 words, no emojis"}`,{modelTier:"quick",cache:false});
+      if(sheetState.id===id){ sheetState.next=r; } showNext(r);
+    }catch(e){ const o=$("#nextOut"); if(o) o.innerHTML=`<p class="muted">${esc(aiErr(e))}</p>`; }
+    if(na.isConnected) na.disabled=false;
+  };
+  $("#editBtn").onclick=()=>openForm(getLead(id)||l);
+  $("#reqEdit").onclick=()=>openReq(id);
+  const ra=$("#reqAI"); if(ra) ra.onclick=()=>aiFillReq(id,ra);
+  const del=$("#delBtn");
+  del.onclick=async()=>{
+    if(!del.dataset.armed){del.dataset.armed="1";del.innerHTML=`${ic("trash")}Tap again to delete ${esc(l.name)}`;setTimeout(()=>{if(del.isConnected){delete del.dataset.armed;del.innerHTML=`${ic("trash")}Delete lead`;}},4000);return;}
+    try{
+      await calQ[id]; const cur=getLead(id)||l; let warn=false;
+      if(cur.calEventId&&mcp){ try{ await mcp.callTool("Google Calendar","delete_event",{eventId:cur.calEventId}); }catch(e){ if(e?.code!=="tool_error") warn=true; } }
+      leads=leads.filter(x=>x.id!==id); await store.removeLead(id); closeSheet(true);
+      toast(warn?"Lead deleted. Remove its reminder from Google Calendar yourself.":"Lead deleted"); renderAll();
+    }
+    catch{ toast("Couldn't delete. Try again."); }
+  };
+}
+
+/* ============ events ============ */
+document.addEventListener("click",e=>{
+  if(e.target.closest("[data-stop]")) return;
+  const n=e.target.closest("[data-new]"); if(n){openForm();return;}
+  const t=e.target.closest("[data-tab]"); if(t){ if(openId&&!closeSheet()) return; tab=t.dataset.tab;try{localStorage.setItem("ld.tab",tab);}catch{} renderAll(); scrollTo(0,0); return;}
+  const o=e.target.closest("[data-open]"); if(o&&!e.target.closest("#sheetRoot")) openLead(o.dataset.open);
+  if(!e.target.closest("[data-tip]")) tip.hidden=true;
+});
+document.getElementById("sheetRoot").addEventListener("input",e=>{ if(e.target.closest("#leadForm,#raw,#reqForm")) formDirty=true; });
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"&&openId){closeSheet();return;}
+  if(e.target.closest?.("[data-stop]")) return;
+  const o=e.target.closest?.("[data-open]"); if(o&&!o.closest("#sheetRoot")&&(e.key==="Enter"||e.key===" ")){e.preventDefault();openLead(o.dataset.open);}
+});
+document.addEventListener("focusin",()=>document.body.classList.toggle("kb",typingIn("body")));
+document.addEventListener("focusout",()=>setTimeout(()=>document.body.classList.toggle("kb",typingIn("body")),0));
+// tooltip for charts
+const tip=$("#tip");
+document.addEventListener("pointerup",e=>{ if(e.pointerType==="touch"){clearTimeout(tip.t);tip.t=setTimeout(()=>tip.hidden=true,1600);} });
+document.addEventListener("pointerover",e=>{const t=e.target.closest("[data-tip]");if(!t){tip.hidden=true;return;}tip.textContent=t.dataset.tip;tip.hidden=false;});
+document.addEventListener("pointermove",e=>{if(!tip.hidden){tip.style.left=Math.min(Math.max(e.clientX,80),innerWidth-80)+"px";tip.style.top=e.clientY+"px";}});
+document.addEventListener("pointerout",e=>{if(!e.relatedTarget||!e.relatedTarget.closest?.("[data-tip]")) tip.hidden=true;});
+setInterval(()=>{ if(!openId&&leads.length&&(tab==="today"||tab==="dash")&&!ui.plan?.busy&&!ui.ins?.busy) requestRender(); },60000);
+
+/* ============ boot ============ */
+function onLeads(list){ leads=list.map(normalize); loaded=true; requestRender(); if(openId&&!openId.startsWith("__")) renderSheet(); }
+function onSettings(s){ settings={...DEFAULT_SETTINGS,...(s||{}),calendar:{...DEFAULT_SETTINGS.calendar,...(s?.calendar||{})}};
+  for(const k of ["todayCat","fCat","dashCat"]) if(ui[k]&&!catById(ui[k])) ui[k]="";   // drop filters for deleted categories
+  requestRender(); }
+function localStore(){
+  const K="leadDiary.v2", read=()=>{try{return JSON.parse(localStorage.getItem(K)||"{}");}catch{return {};}}, write=o=>{try{localStorage.setItem(K,JSON.stringify(o));}catch{}};
+  const emit=()=>{const o=read();onSettings(o.settings);onLeads(Object.entries(o.leads||{}).map(([id,d])=>({id,...d})));};
+  setTimeout(emit,0);
+  return {local:true,async saveLead(id,d){const o=read();o.leads={...(o.leads||{}),[id]:d};write(o);emit();},
+    async patchLead(id,p){const o=read();if(!o.leads?.[id])throw new Error("missing");o.leads[id]={...o.leads[id],...p};write(o);emit();},
+    async removeLead(id){const o=read();delete (o.leads||{})[id];write(o);emit();},
+    async saveSettings(s){const o=read();o.settings=s;write(o);}};
+}
+renderAll();
+(async()=>{
+  const use=n=>window.claude?.use?window.claude.use(n).catch(()=>null):Promise.resolve(null);
+  const [db,smp,mc,dl]=await Promise.all([use("db"),use("sample"),use("mcp"),use("downloads")]);
+  sample=smp; mcp=mc; downloads=dl;
+  if(!db){ store=localStore(); return; }
+  const col=db.collection("leads"), cfg=db.doc("config/main");
+  store={saveLead:(id,d)=>col.doc(id).set(d),patchLead:(id,p)=>col.doc(id).update(p),removeLead:id=>col.doc(id).delete(),saveSettings:s=>cfg.set(s),local:false};
+  cfg.onSnapshot(s=>onSettings(s.exists?s.data():null),()=>{});
+  col.onSnapshot(s=>onLeads(s.docs.map(d=>({id:d.id,...d.data()}))),
+    err=>{ loadErr=`Couldn't load your leads (${err.code}). Reload the page to try again.`; loaded=true; renderAll(); });
+  renderAll();
+  window.LD?.onServer(()=>{ requestRender(); if(openId&&!openId.startsWith("__")){ lastSheetSig=""; renderSheet(); } });
+  const openFromUrl=u=>{ try{ const id=new URL(u,location.href).searchParams.get("open"); if(!id) return;
+    let tries=0; const go=()=>{ if(getLead(id)) openLead(id); else if(tries++<20) setTimeout(go,300); }; go(); }catch{} };
+  openFromUrl(location.href);
+  const qs=new URLSearchParams(location.search);
+  if(qs.get("google")==="connected"){ tab="prefs"; renderAll(); toast("Google Calendar connected"); }
+  else if(qs.get("google")==="error") toast(qs.get("msg")||"Couldn't connect Google Calendar.");
+  if(location.search) history.replaceState(null,"","/");
+  navigator.serviceWorker?.addEventListener("message",e=>{ if(e.data?.type==="open") openFromUrl(e.data.url); });
+})();
+</script>
+</body>
+</html>
