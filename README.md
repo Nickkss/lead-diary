@@ -48,7 +48,7 @@ On a Mac, in Safari choose **File**, then **Add to Dock**.
 |---|---|
 | `DOMAIN`, `PUBLIC_URL` | The app address |
 | `ANTHROPIC_API_KEY` | Turns on AI. Create a key at console.anthropic.com, under **API keys**. |
-| `AI_MODEL` | Which Claude model to use. The default is `claude-opus-5-5`. `claude-haiku-5-5` costs much less but gives simpler answers. |
+| `AI_MODEL` | Which Claude model to use. `claude-haiku-5-5` is low cost. `claude-opus-5-5` gives the best answers but costs much more. The installer asks you which one you want. |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google Calendar (see the next section) |
 | `TZ` | Time zone for reminders. The default is `Asia/Kolkata`. |
 

@@ -38,13 +38,19 @@ if [ ! -f .env ]; then
   DOMAIN="$(ask "Domain for the app, e.g. leads.yourcompany.com (Enter = free address): ")"
   if [ -z "$DOMAIN" ]; then DOMAIN="${IP//./-}.sslip.io"; echo "Using free address: $DOMAIN"; fi
   KEY="$(asks "Anthropic API key for AI features (starts with sk-ant-, Enter = add later): ")"
+  echo "AI model:  1) Claude Haiku 5.5 - low cost, good for everyday notes"
+  echo "           2) Claude Opus 5.5  - best quality, costs much more"
+  M="$(ask "Choose 1 or 2 [1]: ")"
+  if [ "$M" = 2 ]; then MODEL=claude-opus-5-5; else MODEL=claude-haiku-5-5; fi
+  # pick a local port nothing else is using (other projects may already use 3010)
+  for p in 3010 3011 3012 3013 3014 3015 3020 3030 3040 3050; do ss -ltnH "( sport = :$p )" | grep -q . || { APP_PORT=$p; break; }; done
   umask 077
   cat > .env <<EOF
 DOMAIN=$DOMAIN
 PUBLIC_URL=https://$DOMAIN
 TZ=Asia/Kolkata
 ANTHROPIC_API_KEY=$KEY
-AI_MODEL=claude-opus-5-5
+AI_MODEL=$MODEL
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 PROXY_MODE=
@@ -52,6 +58,7 @@ APP_PORT=$APP_PORT
 EOF
 fi
 set -a; . ./.env; set +a
+APP_PORT="${APP_PORT:-3010}"
 
 # DNS sanity check for a custom domain
 if [[ "$DOMAIN" != *.sslip.io ]]; then
