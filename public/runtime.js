@@ -4,8 +4,8 @@
 (function () {
   "use strict";
   const CACHE_KEY = "ld.cache.v1";
-  let leads = new Map(), settings = null, server = { ai: false, google: {}, push: {} };
-  const leadSubs = new Set(), settingsSubs = new Set(), serverSubs = new Set();
+  let leads = new Map(), settings = null, server = { ai: false, google: {}, push: {}, me: null }, users = [];
+  const leadSubs = new Set(), settingsSubs = new Set(), serverSubs = new Set(), activitySubs = new Set();
   let readyResolve; const ready = new Promise(r => (readyResolve = r));
 
   /* ---------- http ---------- */
@@ -16,21 +16,21 @@
     } catch { throw { code: "unavailable", message: "No connection. Check your internet and try again." }; }
     const isJson = (r.headers.get("content-type") || "").includes("json");
     const j = isJson ? await r.json().catch(() => null) : null;
-    if (r.status === 401 && url !== "/api/login" && !url.startsWith("/api/password")) { showAuth(false); throw { code: "not_signed_in", message: "Please sign in again." }; }
+    if (r.status === 401 && url !== "/api/login" && url !== "/api/setup" && !url.startsWith("/api/password")) { showAuth(false); throw { code: "not_signed_in", message: "Please sign in again." }; }
     if (!r.ok) throw { code: j?.code || "unavailable", message: j?.message || "Server error " + r.status };
     return j;
   }
 
   /* ---------- local cache so the app opens instantly, even offline ---------- */
   function saveCache() {
-    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ leads: [...leads].map(([id, d]) => ({ id, ...d })), settings, server, at: Date.now() })); } catch {}
+    try { localStorage.setItem(CACHE_KEY, JSON.stringify({ leads: [...leads].map(([id, d]) => ({ id, ...d })), settings, server, users, at: Date.now() })); } catch {}
   }
   function loadCache() {
     try { const c = JSON.parse(localStorage.getItem(CACHE_KEY) || "null"); if (c) { applyState(c, false); } } catch {}
   }
   function applyState(s, cache = true) {
     leads = new Map((s.leads || []).map(({ id, ...d }) => [id, d]));
-    settings = s.settings || settings; if (s.server) server = s.server;
+    settings = s.settings || settings; if (s.server) server = s.server; if (s.users) users = s.users;
     emitLeads(); emitSettings(); emitServer(); if (cache) saveCache();
   }
   const freeze = o => Object.freeze(JSON.parse(JSON.stringify(o)));
@@ -52,7 +52,9 @@
       if (m.t === "lead") { leads.set(m.id, m.data); emitLeads(); cacheSoon(); }
       else if (m.t === "del") { leads.delete(m.id); emitLeads(); cacheSoon(); }
       else if (m.t === "settings") { settings = m.data; emitSettings(); cacheSoon(); }
-      else if (m.t === "server") { server = m.data; emitServer(); }
+      else if (m.t === "server") { api("GET", "/api/server").then(d => { server = d; emitServer(); saveCache(); }).catch(() => {}); }
+      else if (m.t === "users") { users = m.data; emitServer(); saveCache(); }
+      else if (m.t === "activity") { activitySubs.forEach(f => { try { f(m.item); } catch {} }); }
       else if (m.t === "reload") refresh();
     };
   }
@@ -153,13 +155,14 @@
     authed = false;
     const el = document.getElementById("auth"); if (!el) return;
     el.hidden = false; document.body.classList.add("auth-open");
-    el.querySelector("#authSetup").hidden = !needsSetup;
+    el.querySelector("#authSetup").hidden = !needsSetup; el.querySelector("#authNameRow").hidden = !needsSetup;
     el.querySelector("#authTitle").textContent = needsSetup ? "Set up Lead Diary" : "Welcome back";
-    el.querySelector("#authSub").textContent = needsSetup ? "Enter the setup code from the install, then choose your password." : "Sign in to see your leads.";
-    el.querySelector("#authBtn").textContent = needsSetup ? "Create password" : "Sign in";
+    el.querySelector("#authSub").textContent = needsSetup ? "Enter the setup code from the install, then create the admin login." : "Sign in to see your leads.";
+    el.querySelector("#authBtn").textContent = needsSetup ? "Create admin login" : "Sign in";
     el.querySelector("#authPw").autocomplete = needsSetup ? "new-password" : "current-password";
     el.dataset.mode = needsSetup ? "setup" : "login";
-    setTimeout(() => el.querySelector(needsSetup ? "#authCode" : "#authPw")?.focus(), 50);
+    try { const last = localStorage.getItem("ld.user"); if (last && !needsSetup) el.querySelector("#authUser").value = last; } catch {}
+    setTimeout(() => el.querySelector(needsSetup ? "#authCode" : el.querySelector("#authUser").value ? "#authPw" : "#authUser")?.focus(), 50);
   }
   async function onSignedIn() {
     authed = true;
@@ -172,10 +175,12 @@
     e.preventDefault();
     const el = document.getElementById("auth"), btn = el.querySelector("#authBtn"), err = el.querySelector("#authErr");
     const pw = el.querySelector("#authPw").value, code = el.querySelector("#authCode").value;
+    const username = el.querySelector("#authUser").value.trim().toLowerCase(), name = el.querySelector("#authName").value.trim();
     err.textContent = ""; btn.disabled = true;
     try {
-      if (el.dataset.mode === "setup") await api("POST", "/api/setup", { code, password: pw });
-      else await api("POST", "/api/login", { password: pw });
+      if (el.dataset.mode === "setup") await api("POST", "/api/setup", { code, name, username, password: pw });
+      else await api("POST", "/api/login", { username, password: pw });
+      try { localStorage.setItem("ld.user", username); } catch {}
       el.querySelector("#authPw").value = ""; await onSignedIn();
     } catch (x) { err.textContent = x.message || "Couldn't sign in."; }
     btn.disabled = false;
@@ -192,6 +197,10 @@
 
   window.LD = {
     api, server: () => server, onServer: f => { serverSubs.add(f); return () => serverSubs.delete(f); },
+    me: () => server.me, users: () => users, isAdmin: () => server.me?.role === "admin",
+    userName: id => users.find(u => u.id === id)?.name || "",
+    activity: (limit = 80) => api("GET", "/api/activity?limit=" + limit).then(r => r.items),
+    onActivity: f => { activitySubs.add(f); return () => activitySubs.delete(f); },
     pushState, enablePush, disablePush, isStandalone, isIOS,
     async logout() { await api("POST", "/api/logout").catch(() => {}); try { localStorage.removeItem(CACHE_KEY); } catch {} location.reload(); },
   };

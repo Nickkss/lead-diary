@@ -8,6 +8,7 @@ A follow-up tracker for leads that come in from ads on WhatsApp. It works on an 
 - **Reminders:** phone notifications from the app itself, plus Google Calendar events
 - **Dashboard:** charts, a breakdown by category, and an AI review
 - **Backup:** export to Excel, and a full backup file you can restore
+- **Team:** the admin creates logins. Everyone sees all leads and can add updates. Members change only their own leads and can't delete leads. Every update and change shows who made it.
 
 Your data stays on your own server, in one SQLite file inside a Docker volume.
 
@@ -95,7 +96,7 @@ From then on, the app keeps your calendar in step with your leads:
 cd /opt/lead-diary
 sudo bash update.sh                                         # get the latest version / apply .env changes
 docker compose logs -f app                                  # see what the app is doing
-docker compose exec app node server/reset-password.js "new-password"   # forgot your password
+docker compose exec app node server/reset-password.js <username> "new-password"   # forgot a password
 ```
 
 **Backups:** in the app, open **Settings**, then **Backup**. **Download** gives you the full backup file, and **Export** gives you an Excel file. To move to a new server, install there, then use **Restore from a backup file**.

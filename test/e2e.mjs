@@ -34,10 +34,10 @@ try {
   await p.goto(BASE); await sleep(500);
   ok(await p.isVisible("#authSetup"), "first visit asks for the setup code");
   await p.screenshot({ path: path.join(DATA, "01-setup.png") });
-  await p.fill("#authCode", "000000"); await p.fill("#authPw", "secret123"); await p.click("#authBtn"); await sleep(300);
+  await p.fill("#authCode", "000000"); await p.fill("#authName", "Nick Chouhan"); await p.fill("#authUser", "nick"); await p.fill("#authPw", "secret123"); await p.click("#authBtn"); await sleep(300);
   ok((await p.textContent("#authErr")).includes("wrong"), "wrong setup code is refused");
   const code = fs.readFileSync(path.join(DATA, "setup-code.txt"), "utf8").trim();
-  await p.fill("#authCode", code); await p.fill("#authPw", "secret123"); await p.click("#authBtn"); await sleep(700);
+  await p.fill("#authCode", code); await p.fill("#authName", "Nick Chouhan"); await p.fill("#authUser", "nick"); await p.fill("#authPw", "secret123"); await p.click("#authBtn"); await sleep(700);
   ok(!(await p.isVisible("#auth")), "setup with the right code signs in");
   ok(!fs.existsSync(path.join(DATA, "setup-code.txt")), "setup code is used up");
 
@@ -142,10 +142,65 @@ try {
   // sign out / wrong password / sign in
   await p.click("#logout"); await sleep(800);
   ok(await p.isVisible("#auth") && !(await p.isVisible("#authSetup")), "sign out shows the sign-in screen");
-  await p.fill("#authPw", "wrongpass1"); await p.click("#authBtn"); await sleep(300);
+  await p.fill("#authUser", "nick"); await p.fill("#authPw", "wrongpass1"); await p.click("#authBtn"); await sleep(300);
   ok((await p.textContent("#authErr")).includes("Wrong"), "wrong password is refused");
-  await p.fill("#authPw", "secret123"); await p.click("#authBtn"); await sleep(800);
+  await p.fill("#authUser", "nick"); await p.fill("#authPw", "secret123"); await p.click("#authBtn"); await sleep(800);
   ok(!(await p.isVisible("#auth")), "right password signs back in");
+
+  // ---------- team ----------
+  await p.click('[data-tab="prefs"]'); await sleep(500);
+  await p.fill("#nuName", "Ravi Sharma"); await p.fill("#nuUser", "Ravi"); await p.fill("#nuPass", "ravipass1"); await p.click("#userForm button[type=submit]"); await sleep(700);
+  ok((await p.textContent("#teamCard")).includes("Ravi Sharma"), "admin adds a team member");
+  const adminLead = (await p.evaluate(() => fetch("/api/state").then(r => r.json()))).leads.find(l => l.status !== "won");
+  const ctx2 = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const r = await ctx2.newPage(); r.on("pageerror", e => errs.push("ravi: " + e.message));
+  await r.goto(BASE); await sleep(500);
+  ok(!(await r.isVisible("#authSetup")), "second person sees a normal sign-in (no setup code)");
+  await r.fill("#authUser", "ravi"); await r.fill("#authPw", "ravipass1"); await r.click("#authBtn"); await sleep(900);
+  ok(!(await r.isVisible("#auth")), "team member signs in with username + password");
+  await r.click('[data-tab="leads"]'); await sleep(300);
+  await r.click('[data-fown=""]').catch(() => {}); await sleep(200);
+  ok(await r.locator("#leadList .row").count() >= 2, "team member sees everyone's leads");
+  await r.click(`#leadList [data-open="${adminLead.id}"]`); await sleep(400);
+  ok(await r.isDisabled("#dStatus") && !(await r.locator("#delBtn").count()) && !(await r.locator("#editBtn").count()), "on someone else's lead: stage locked, no edit, no delete");
+  await r.fill("#upd", "Called from Ravi's side, wants brochure"); await r.click("#savePlain"); await sleep(700);
+  let st4 = await r.evaluate(() => fetch("/api/state").then(x => x.json()));
+  const ravi = st4.users.find(u => u.name === "Ravi Sharma");
+  const al = st4.leads.find(l => l.id === adminLead.id);
+  ok(al.notes[0].text.includes("brochure") && al.notes[0].by === ravi.id, "member can add an update on any lead, signed with their name");
+  ok((await r.textContent(".timeline")).includes("You"), "update shows who wrote it");
+  const api = (pg, m, u, b) => pg.evaluate(([m, u, b]) => fetch(u, { method: m, headers: { "Content-Type": "application/json" }, body: b ? JSON.stringify(b) : undefined }).then(x => x.status), [m, u, b]);
+  ok(await api(r, "PATCH", "/api/leads/" + adminLead.id, { status: "lost" }) === 403, "server refuses stage change on someone else's lead");
+  ok(await api(r, "DELETE", "/api/leads/" + adminLead.id) === 403, "server refuses delete by a member");
+  ok(await api(r, "PATCH", "/api/leads/" + adminLead.id, { notes: [] }) === 403, "server refuses wiping someone's updates");
+  ok(await api(r, "PUT", "/api/settings", { categories: [] }) === 403 && await api(r, "GET", "/api/users") === 403, "settings and team are admin-only");
+  await r.click("#sheetX"); await sleep(200);
+  // member adds their own lead and changes its stage
+  await r.click(".fab"); await sleep(250); await r.fill("#fName", "Ravi's Client"); await r.click('[data-pick]:has-text("LIMS")');
+  ok(!(await r.locator("#fOwner").count()), "member doesn't get the 'assign to' choice");
+  await r.click("#leadForm button[type=submit]"); await sleep(700);
+  st4 = await r.evaluate(() => fetch("/api/state").then(x => x.json()));
+  const rl = st4.leads.find(l => l.name === "Ravi's Client");
+  ok(rl.owner === ravi.id && rl.createdBy === ravi.id, "member's new lead is theirs");
+  ok(await api(r, "PATCH", "/api/leads/" + rl.id, { status: "demo" }) === 200, "member can change their own lead");
+  await r.click('[data-tab="today"]'); await sleep(300);
+  ok(await r.locator('[data-scope="mine"][aria-pressed="true"]').count() === 1, "Today shows 'My follow-ups' by default");
+  await r.screenshot({ path: path.join(DATA, "06-member-today.png") });
+  await r.click('[data-tab="prefs"]'); await sleep(300);
+  ok(!(await r.isVisible("#catForm")) && !(await r.locator("#userForm").count()), "member settings hide admin sections");
+  // admin sees attribution
+  await p.click('[data-tab="dash"]'); await sleep(900);
+  const dashText = await p.textContent("#main");
+  ok(dashText.includes("Ravi Sharma") && dashText.includes("Recent activity"), "dashboard shows the team table");
+  ok((await p.textContent("#actList")).includes("Ravi"), "activity feed shows Ravi's work: " + (await p.textContent("#actList")).replace(/\s+/g, " ").slice(0, 120));
+  await p.screenshot({ path: path.join(DATA, "07-admin-dash.png"), fullPage: true });
+  // admin reassigns a lead to Ravi
+  ok(await api(p, "PATCH", "/api/leads/" + adminLead.id, { owner: ravi.id }) === 200, "admin can assign a lead");
+  // turning Ravi off signs him out
+  await p.click('[data-tab="prefs"]'); await sleep(600);
+  await p.click(`[data-act="${ravi.id}"]`); await p.click(`[data-act="${ravi.id}"]`); await sleep(700);
+  ok(await api(r, "GET", "/api/state") === 401, "turned-off member is signed out");
+  await ctx2.close();
 
   // desktop + dark screenshot
   await p.setViewportSize({ width: 1280, height: 820 }); await p.emulateMedia({ colorScheme: "dark" });

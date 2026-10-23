@@ -50,7 +50,9 @@
 
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 [hidden]{display:none!important}
+html{background:var(--bg);min-height:100%;min-height:100dvh}
 html,body{min-height:100%}
+body{min-height:100vh;min-height:100dvh}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
 button,input,select,textarea{font:inherit;color:inherit}
@@ -327,6 +329,17 @@ details.more[open] > summary{margin-bottom:14px}
 .ask .input{flex:1}
 .ask-out .names{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 @media (max-width:520px){.kpi{padding:12px}.kpi .v{font-size:22px}}
+.owner-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px;color:var(--ink-2)}
+.owner-line svg.i{width:16px;height:16px}
+.timeline .by{font-size:12px;font-weight:700;color:var(--accent);background:var(--accent-soft);border-radius:99px;padding:0 8px}
+.select-pill[disabled],.seg button[disabled]{opacity:.55;cursor:not-allowed}
+.act{display:flex;flex-direction:column}
+.act-row{display:grid;grid-template-columns:30px 1fr;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:14px}
+.act-row:first-child{border-top:0}
+.act-av{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-size:11.5px;font-weight:700;background:var(--accent-soft);color:var(--accent)}
+.act-row .linkish{font-weight:700}
+.team-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--line);flex-wrap:wrap}
+.team-row:first-child{border-top:0}
 .prio-tag{display:inline-block;margin-left:6px;padding:0 7px;border-radius:99px;font-size:11px;font-weight:700;line-height:18px;background:var(--red-soft);color:var(--red);vertical-align:2px}
 .prio-box{display:flex;flex-direction:column;gap:8px}
 .prio-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
@@ -359,8 +372,9 @@ body.auth-open .shell,body.auth-open #sheetRoot{display:none}
   <form id="authForm" class="card auth-card" autocomplete="on">
     <img src="/icons/icon-192.png" alt="" width="64" height="64" style="border-radius:16px">
     <div><h1 id="authTitle">Welcome back</h1><p class="sub" id="authSub" style="margin:4px 0 0">Sign in to see your leads.</p></div>
-    <input type="text" name="username" value="owner" autocomplete="username" hidden>
     <label class="field" id="authSetup" hidden><span>Setup code</span><input class="input num" id="authCode" inputmode="numeric" autocomplete="one-time-code" placeholder="6-digit code from the install"></label>
+    <label class="field" id="authNameRow" hidden><span>Your name</span><input class="input" id="authName" autocomplete="name" placeholder="e.g. Nick Chouhan"></label>
+    <label class="field"><span>Username</span><input class="input" id="authUser" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required placeholder="e.g. nick"></label>
     <label class="field"><span>Password</span><input class="input" id="authPw" type="password" required minlength="8"></label>
     <p class="auth-err" id="authErr" role="alert"></p>
     <button class="btn primary" id="authBtn" type="submit" style="height:48px">Sign in</button>
@@ -419,7 +433,7 @@ const DEFAULT_SETTINGS={categories:[],focus:[],focusOnly:false,defaultHour:11,ca
 let leads=[], settings=structuredClone(DEFAULT_SETTINGS), loaded=false;
 let store=null, sample=null, mcp=null, downloads=null;
 let tab="today", openId=null;
-let ui={todayCat:"",q:"",fStatus:"",fCat:"",fPrio:false,fLong:false,sort:"recent",dashPeriod:30,dashCat:""};
+let ui={todayCat:"",todayScope:"mine",fOwner:"",q:"",fStatus:"",fCat:"",fPrio:false,fLong:false,sort:"recent",dashPeriod:30,dashCat:""};
 const calErr={};          // leadId -> message, kept for this visit
 let sheetState={id:null,type:"Call",typeTouched:false,next:null};   // survives live re-renders of the lead sheet
 let formDirty=false, closeArmed=false, lastSheetSig="", renderDirty=false, opener=null, loadErr="";
@@ -554,11 +568,26 @@ function matchQ(l,q){if(!q) return true;q=q.toLowerCase();return [l.name,l.compa
 /* ============ persistence ============ */
 const getLead=id=>leads.find(l=>l.id===id);
 /* create = full write; every later change = field-level patch, applied locally first so the next action never starts from stale data */
-async function createLead(id,data){ data.updatedAt=new Date().toISOString(); leads=[...leads,normalize({id,...data})]; await store.saveLead(id,data); }
+async function createLead(id,data){ data.updatedAt=new Date().toISOString(); data.notes=(data.notes||[]).map(n=>({...n,by:ME().id})); if(!data.owner) data.owner=ME().id; leads=[...leads,normalize({id,...data})]; await store.saveLead(id,data); }
+/* ---- team: who can change what (the server enforces the same rules) ---- */
+const ME=()=>window.LD?.me()||{id:"",name:"",role:"admin"};
+const isAdminMe=()=>ME().role==="admin";
+const team=()=>(window.LD?.users()||[]).filter(u=>u.active);
+const multi=()=>team().length>1;
+const firstAdmin=()=>(window.LD?.users()||[]).find(u=>u.role==="admin"&&u.active)?.id||"";
+const ownerId=l=>l.owner||firstAdmin();
+const uname=id=>window.LD?.userName(id)||"Someone";
+const firstName=id=>uname(id).split(" ")[0];
+const canEdit=l=>isAdminMe()||ownerId(l)===ME().id;
+/* returns the keys that were left out because only the lead's owner (or an admin) may change them */
 async function patchLead(id,patch,{touch=true}={}){
   patch={...patch}; if(touch) patch.updatedAt=new Date().toISOString();
+  if(Array.isArray(patch.notes)) patch.notes=patch.notes.map(n=>n.by?n:{...n,by:ME().id});
+  const cur=getLead(id); let dropped=[];
+  if(cur&&!canEdit(cur)){ dropped=Object.keys(patch).filter(k=>!["notes","updatedAt"].includes(k)); dropped.forEach(k=>delete patch[k]); if(!("notes" in patch)) return dropped; }
   leads=leads.map(l=>l.id===id?{...l,...patch}:l);
   await store.patchLead(id,patch);
+  return dropped;
 }
 async function saveSettings(patch){ settings={...settings,...patch}; renderAll(); try{ await store.saveSettings(settings);}catch(e){toast("Couldn't save settings. Try again.");} }
 
@@ -674,7 +703,8 @@ function renderNav(){
 const typingIn=sel=>{const a=document.activeElement;return !!(a&&a.closest&&a.closest(sel)&&(a.tagName==="TEXTAREA"||(a.tagName==="INPUT"&&!/checkbox|radio|button|submit/.test(a.type))));};
 /* live data re-renders wait while the user types, then catch up on blur */
 function requestRender(){ if(typingIn("#main")||(dictating&&!openId)){renderDirty=true;return;} renderAll(); }
-document.addEventListener("focusout",()=>setTimeout(()=>{ if(renderDirty&&!typingIn("#main")){renderDirty=false;renderAll();} },0));
+// catch up after the tap that ended typing has been handled, so that tap never lands on a rebuilt screen
+document.addEventListener("focusout",()=>setTimeout(()=>{ if(renderDirty&&!typingIn("#main")){renderDirty=false;renderAll();} },400));
 function renderAll(){ renderNav(); const m=$("#main"); const y=scrollY;
   if(tab==="today") renderToday(m); else if(tab==="leads") renderLeads(m); else if(tab==="dash") renderDash(m); else renderPrefs(m);
   scrollTo(0,y); }
@@ -682,7 +712,7 @@ function renderAll(){ renderNav(); const m=$("#main"); const y=scrollY;
 function rowHTML(l,{showWa=true}={}){
   const b=bucket(l), last=lastNote(l);
   const due=l.nextAt&&OPEN(l.status)?`<span class="due ${b==="over"?"over":b==="today"?"today":""}">${esc(dueStr(l.nextAt))}</span>`:`<span class="pill st-${esc(l.status)}">${esc(statusLabel(l.status))}</span>`;
-  const sub=[l.company,catName(l.category)].filter(Boolean).join(" · ");
+  const sub=[l.company,catName(l.category),multi()?(ownerId(l)===ME().id?"You":firstName(ownerId(l))):""].filter(Boolean).join(" · ");
   const wa=waLink(l.phone);
   return `<div class="row" role="button" tabindex="0" data-open="${esc(l.id)}">
     <span class="av" style="background:${catColor(l.category)}">${esc(initials(l.name))}</span>
@@ -708,18 +738,19 @@ function renderToday(m){
   const now=new Date(), h=now.getHours();
   const hello=h<12?"Good morning":h<17?"Good afternoon":"Good evening";
   const focusSet=settings.focusOnly&&settings.focus.length?settings.focus:null;
-  let pool=leads.filter(l=>OPEN(l.status));
+  const mineOnly=multi()&&ui.todayScope==="mine";
+  let pool=leads.filter(l=>OPEN(l.status)&&(!mineOnly||ownerId(l)===ME().id));
   if(focusSet) pool=pool.filter(l=>focusSet.includes(l.category));
   if(ui.todayCat) pool=pool.filter(l=>l.category===ui.todayCat);
   const by=k=>pool.filter(l=>bucket(l)===k).sort(byPrioThen((a,b)=>new Date(a.nextAt)-new Date(b.nextAt)));
   const over=by("over"), today=by("today"), noplan=pool.filter(l=>bucket(l)==="noplan").sort(byPrioThen((a,b)=>(b.createdAt||"").localeCompare(a.createdAt||"")));
   const tomorrow=by("tomorrow"), week=by("week");
-  const tk=dayKey(now), scope=leads.filter(l=>(!focusSet||focusSet.includes(l.category))&&(!ui.todayCat||l.category===ui.todayCat));
+  const tk=dayKey(now), scope=leads.filter(l=>(!focusSet||focusSet.includes(l.category))&&(!ui.todayCat||l.category===ui.todayCat)&&(!mineOnly||ownerId(l)===ME().id));
   const doneToday=scope.filter(l=>(l.notes||[]).some(n=>dayKey(new Date(n.at))===tk)&&bucket(l)!=="over"&&bucket(l)!=="today").length;
   const remaining=over.length+today.length;
   const weekAgo=Date.now()-7*864e5; const newWeek=leads.filter(l=>new Date(l.createdAt)>weekAgo).length;
   const grp=(cls,title,list)=>list.length?`<section class="group ${cls}"><div class="group-h"><span class="bar"></span><h2>${title}</h2><span class="n">${list.length}</span></div><div class="card rows">${list.map(l=>rowHTML(l)).join("")}</div></section>`:"";
-  const needBackup=leads.length>=5&&(!settings.lastBackupAt||Date.now()-new Date(settings.lastBackupAt)>7*864e5);
+  const needBackup=isAdminMe()&&leads.length>=5&&(!settings.lastBackupAt||Date.now()-new Date(settings.lastBackupAt)>7*864e5);
   const focusNames=focusSet?focusSet.map(catName).join(", "):"";
   let body;
   if(loadErr) body=`<div class="card banner">${esc(loadErr)}</div>`;
@@ -732,7 +763,7 @@ function renderToday(m){
   }
   m.innerHTML=`<div class="view">
     <section class="card hero-today">
-      <div class="ht-top"><div><div class="sub">${DAYS[now.getDay()]}, ${now.getDate()} ${MON[now.getMonth()]}</div><h1>${hello}</h1>
+      <div class="ht-top"><div><div class="sub">${DAYS[now.getDay()]}, ${now.getDate()} ${MON[now.getMonth()]}</div><h1>${hello}${ME().name?", "+esc(ME().name.split(" ")[0]):""}</h1>
         <div class="sub" style="margin-top:2px">${!leads.length?"Let's add your first lead.":remaining?`${remaining} follow-up${remaining===1?"":"s"} to do${over.length?` · ${over.length} missed`:""}`:doneToday?"All done for today. Nice work.":"Nothing due right now."}</div></div>
         ${leads.length?`<div class="ring" role="img" aria-label="${doneToday} of ${doneToday+remaining} done today"><svg viewBox="0 0 76 76"><circle cx="38" cy="38" r="32" fill="none" stroke="var(--surface-2)" stroke-width="8"/>
           <circle cx="38" cy="38" r="32" fill="none" stroke="${remaining?"var(--accent)":"var(--green)"}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${(2*Math.PI*32).toFixed(1)}" stroke-dashoffset="${((1-(doneToday+remaining?doneToday/(doneToday+remaining):1))*2*Math.PI*32).toFixed(1)}"/></svg>
@@ -746,6 +777,7 @@ function renderToday(m){
       </div>
       ${sample&&pool.length?`<button class="btn ai" id="planBtn" style="height:44px">${ic("spark")}Plan my day with AI</button>`:""}
     </section>
+    ${multi()?`<div class="seg" role="group" aria-label="Whose follow-ups" style="align-self:flex-start"><button data-scope="mine" aria-pressed="${ui.todayScope==="mine"}">My follow-ups</button><button data-scope="all" aria-pressed="${ui.todayScope==="all"}">Everyone</button></div>`:""}
     <div id="planBox">${ui.plan?planHTML():""}</div>
     ${store?.local?`<div class="card banner"><span>Your leads are only saved in this browser. Open this app from claude.ai to keep them synced and safe.</span></div>`:""}
     ${needBackup?`<div class="card banner"><span>${settings.lastBackupAt?"Your last backup is over a week old.":"You haven't backed up your leads yet."} Keep a copy in Excel.</span><button class="btn sm" id="bkBtn">${ic("down")}Back up now</button></div>`:""}
@@ -754,6 +786,7 @@ function renderToday(m){
     ${body}
   </div>`;
   m.querySelectorAll("[data-tcat]").forEach(b=>b.onclick=()=>{ui.todayCat=b.dataset.tcat;renderAll();});
+  m.querySelectorAll("[data-scope]").forEach(b=>b.onclick=()=>{ui.todayScope=b.dataset.scope;renderAll();});
   m.querySelectorAll("[data-jump]").forEach(b=>b.onclick=()=>m.querySelector(`.group.${b.dataset.jump}`)?.scrollIntoView({behavior:"smooth",block:"start"}));
   $("#bkBtn")&&($("#bkBtn").onclick=exportExcel);
   $("#planBtn")&&($("#planBtn").onclick=()=>planDay([...over,...today,...noplan.slice(0,10)]));
@@ -774,7 +807,7 @@ async function planDay(list){
 
 /* ============ Leads ============ */
 function leadListHTML(){
-  const list=leads.filter(l=>matchQ(l,ui.q)&&(!ui.fStatus||l.status===ui.fStatus)&&(!ui.fCat||l.category===ui.fCat)&&(!ui.fPrio||OPEN(l.status)&&prioOf(l)==="high")&&(!ui.fLong||isLong(l)));
+  const list=leads.filter(l=>matchQ(l,ui.q)&&(!ui.fStatus||l.status===ui.fStatus)&&(!ui.fCat||l.category===ui.fCat)&&(!ui.fPrio||OPEN(l.status)&&prioOf(l)==="high")&&(!ui.fLong||isLong(l))&&(!ui.fOwner||ownerId(l)===(ui.fOwner==="me"?ME().id:ui.fOwner)));
   const sorters={prio:(a,b)=>(OPEN(a.status)?0:1)-(OPEN(b.status)?0:1)||prioRankOf(a)-prioRankOf(b),recent:(a,b)=>(b.updatedAt||"").localeCompare(a.updatedAt||""),next:(a,b)=>(a.nextAt||"9")<(b.nextAt||"9")?-1:(a.nextAt||"9")>(b.nextAt||"9")?1:0,value:(a,b)=>(b.value||0)-(a.value||0),name:(a,b)=>(a.name||"").localeCompare(b.name||"")};
   list.sort(sorters[ui.sort]);
   if(!loaded) return `<div class="card empty"><p>Loading your leads…</p></div>`;
@@ -791,6 +824,7 @@ function renderLeads(m){
     <div class="toolbar">
       <div class="searchbox">${ic("search")}<input class="input" id="q" type="search" placeholder="Search name, company, phone, notes" value="${esc(ui.q)}"></div>
       ${settings.categories.length?catChips(ui.fCat,"data-fcat"):""}
+      ${multi()?`<div class="chips"><button class="chip" data-fown="" aria-pressed="${!ui.fOwner}">Everyone</button><button class="chip" data-fown="me" aria-pressed="${ui.fOwner==="me"}">Mine <span class="muted num">${leads.filter(l=>ownerId(l)===ME().id).length}</span></button>${team().filter(u=>u.id!==ME().id).map(u=>`<button class="chip" data-fown="${esc(u.id)}" aria-pressed="${ui.fOwner===u.id}">${esc(u.name.split(" ")[0])} <span class="muted num">${leads.filter(l=>ownerId(l)===u.id).length}</span></button>`).join("")}</div>`:""}
       <div class="chips"><button class="chip" id="fPrio" aria-pressed="${ui.fPrio}"><span class="dot" style="background:var(--red)"></span>High priority <span class="muted num">${leads.filter(l=>OPEN(l.status)&&prioOf(l)==="high"&&(!ui.fCat||l.category===ui.fCat)).length}</span></button><button class="chip" id="fLong" aria-pressed="${ui.fLong}">${ic("cal")}Long-term <span class="muted num">${leads.filter(isLong).length}</span></button><button class="chip" data-fst="" aria-pressed="${!ui.fStatus}">All stages</button>${STATUSES.map(s=>`<button class="chip" data-fst="${s.id}" aria-pressed="${ui.fStatus===s.id}">${s.label} <span class="muted num">${counts[s.id]}</span></button>`).join("")}</div>
     </div>
     ${sample&&leads.length?`<form class="ask" id="askForm"><input class="input" id="askQ" placeholder="Ask AI, e.g. which LIMS leads want a demo?" value="${esc(ui.ask?.q||"")}"><button class="btn ai" type="submit" style="height:44px">${ic("spark")}Ask</button></form>
@@ -800,6 +834,7 @@ function renderLeads(m){
   </div>`;
   $("#sortSel").value=ui.sort;
   const fp=$("#fPrio"); if(fp) fp.onclick=()=>{ui.fPrio=!ui.fPrio;renderAll();};
+  m.querySelectorAll("[data-fown]").forEach(b=>b.onclick=()=>{ui.fOwner=b.dataset.fown;renderAll();});
   const fl=$("#fLong"); if(fl) fl.onclick=()=>{ui.fLong=!ui.fLong;if(ui.fLong)ui.sort="next";renderAll();};
   const pa=$("#prioAI"); if(pa) pa.onclick=aiPrioritise;
   const af=$("#askForm"); if(af) af.onsubmit=e=>{e.preventDefault();askLeads($("#askQ").value.trim());};
@@ -812,7 +847,7 @@ function renderLeads(m){
 
 async function aiPrioritise(){
   if(ui.prioBusy) return;
-  const open=leads.filter(l=>OPEN(l.status)&&l.prioBy!=="you"||OPEN(l.status)&&!l.prio).slice(0,150);
+  const open=leads.filter(l=>OPEN(l.status)&&canEdit(l)&&(l.prioBy!=="you"||!l.prio)).slice(0,150);
   if(!open.length){toast("Every open lead already has a priority you set.");return;}
   ui.prioBusy=true; renderAll();
   const data=open.map(l=>({id:l.id,name:l.name,company:l.company,category:catName(l.category),stage:l.status,interest:l.temp,value:l.value,need:l.need,
@@ -935,8 +970,19 @@ function renderDash(m){
       <div class="card chart"><h3>Categories</h3><p class="cap">New = ${periodName}. Other columns are all time.</p>
         ${catRows?`<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Category</th><th>New</th><th>Open</th><th>Won</th><th>Win %</th><th>Missed</th><th>Mix</th></tr></thead><tbody>${catRows}</tbody></table></div>
         <div class="legend"><span><i style="background:var(--accent)"></i>Open</span><span><i style="background:var(--green)"></i>Won</span><span><i style="background:var(--ink-3)"></i>Lost</span></div>`:`<p class="muted">Add categories in Settings to see the split.</p>`}</div>
+      ${multi()?`<div class="card chart full"><h3>Team</h3><p class="cap">Who is doing what · ${periodName}</p>
+        <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Person</th><th>Open leads</th><th>New</th><th>Updates</th><th>Won</th><th>Missed</th></tr></thead><tbody>
+        ${team().map(u=>{ const mine=base.filter(l=>ownerId(l)===u.id);
+          const ups=base.reduce((s,l)=>s+(l.notes||[]).filter(n=>n.by===u.id&&inP(n.at)).length,0);
+          const od=mine.filter(l=>bucket(l)==="over").length;
+          return `<tr><td><span style="display:inline-flex;align-items:center;gap:8px;font-weight:600"><span class="act-av">${esc(initials(u.name))}</span>${esc(u.name)}${u.id===ME().id?" (you)":""}</span></td>
+            <td>${mine.filter(l=>OPEN(l.status)).length}</td><td>${mine.filter(l=>inP(l.createdAt)).length}</td><td>${ups}</td>
+            <td>${mine.filter(l=>l.status==="won"&&inP(l.closedAt||l.updatedAt)).length}</td><td style="color:${od?"var(--red)":"inherit"}">${od}</td></tr>`; }).join("")}
+        </tbody></table></div></div>`:""}
+      <div class="card chart full"><h3>Recent activity</h3><p class="cap">Every change, with who made it</p><div class="act" id="actList">${actListHTML()}</div></div>
     </div>
   </div>`;
+  loadActivity();
   m.querySelectorAll("[data-tip]").forEach(el=>{el.setAttribute("role","img");el.setAttribute("aria-label",el.dataset.tip);});
   m.querySelectorAll("[data-per]").forEach(b=>b.onclick=()=>{ui.dashPeriod=Number(b.dataset.per);renderAll();});
   m.querySelectorAll("[data-dcat]").forEach(b=>b.onclick=()=>{ui.dashCat=b.dataset.dcat;renderAll();});
@@ -955,13 +1001,43 @@ Weekly new leads (oldest→newest): ${weeks.map(w=>w.n).join(", ")}.`;
   };
 }
 
+/* ---- activity feed ---- */
+function actListHTML(){
+  if(!ui.act) return `<p class="muted">Loading…</p>`;
+  const items=ui.act.filter(a=>!ui.dashCat||!a.leadId||getLead(a.leadId)?.category===ui.dashCat).slice(0,40);
+  if(!items.length) return `<p class="muted">Nothing yet. Changes to leads show up here.</p>`;
+  return items.map(a=>{ const who=a.userId===ME().id?"You":uname(a.userId), exists=a.leadId&&getLead(a.leadId);
+    const on=/^(added|deleted) the lead/.test(a.detail)?":":" on";
+    const lead=a.leadName?(exists?`${on} <button class="linkish" data-open="${esc(a.leadId)}">${esc(a.leadName)}</button>`:`${on} <b>${esc(a.leadName)}</b>`):"";
+    return `<div class="act-row"><span class="act-av">${esc(initials(who==="You"?ME().name:who))}</span><div><b>${esc(who)}</b> ${esc(a.detail)}${lead}<div class="muted" style="font-size:12.5px">${esc(whenStr(a.at))}</div></div></div>`; }).join("");
+}
+let actLoadedAt=0;
+async function loadActivity(){
+  if(Date.now()-actLoadedAt<60000&&ui.act) return;
+  actLoadedAt=Date.now();
+  try{ ui.act=await LD.activity(120); }catch{ ui.act=ui.act||[]; }
+  const el=$("#actList"); if(el) el.innerHTML=actListHTML();
+}
+
 /* ============ Settings ============ */
 function renderPrefs(m){
-  const C=settings.categories, SV=window.LD?.server()||{};
+  const C=settings.categories, SV=window.LD?.server()||{}, A=isAdminMe(), HID=A?"":"hidden";
   m.innerHTML=`<div class="view">
     <div class="top"><h1>Settings</h1></div>
 
-    <section class="set-sec"><h2>Categories</h2>
+    ${A?`<section class="set-sec"><h2>Team</h2>
+      <p class="sub" style="padding:0 4px">Everyone sees all leads and can add updates. Team members can change only their own leads and can't delete leads. Admins can do everything.</p>
+      <div class="card" id="teamCard">${teamHTML()}</div>
+      <form class="card pad" id="userForm" style="display:flex;flex-direction:column;gap:10px" autocomplete="off">
+        <span class="label">Add a person</span>
+        <div class="grid2"><input class="input" id="nuName" placeholder="Name, e.g. Ravi Sharma"><input class="input" id="nuUser" placeholder="Username for login, e.g. ravi" autocapitalize="none" autocorrect="off" spellcheck="false"></div>
+        <div class="grid2"><input class="input" id="nuPass" type="password" placeholder="Password, 8+ characters" autocomplete="new-password"><select class="input" id="nuRole"><option value="member">Team member</option><option value="admin">Admin</option></select></div>
+        <button class="btn primary" type="submit">${ic("plus")}Add person</button>
+        <p class="sub" style="margin:0;font-size:13px">Share the app address, username and password with them. They can change their password in Settings.</p>
+      </form>
+    </section>`:""}
+
+    <section class="set-sec" ${HID}><h2>Categories</h2>
       <p class="sub" style="padding:0 4px">What each lead is for, e.g. LIMS or ERP. Add the modules you sell so you can tick them in each lead's requirements. Star a category to put it first on your Today screen.</p>
       <div class="card">
         ${C.map(c=>{const n=leads.filter(l=>l.category===c.id).length;return `<div class="set-row">
@@ -973,7 +1049,7 @@ function renderPrefs(m){
       </div>
     </section>
 
-    <section class="set-sec"><h2>Today screen</h2>
+    <section class="set-sec" ${HID}><h2>Today screen</h2>
       <div class="card">
         <label class="set-row"><div class="grow"><div class="t">Show only starred categories</div><div class="d">${settings.focus.length?"Today will list only: "+esc(settings.focus.map(catName).join(", ")):"Star a category above first"}</div></div>
           <span class="switch"><input type="checkbox" id="focusOnly" ${settings.focusOnly?"checked":""} ${settings.focus.length?"":"disabled"}><span></span></span></label>
@@ -987,19 +1063,20 @@ function renderPrefs(m){
         ${!SV.google?.configured?`<div class="set-row"><div class="grow"><div class="t">Not set up yet</div><div class="d">Add your Google keys to the server first (README, section "Google Calendar"), then restart the app.</div></div></div>`
           :SV.google.connected?`<div class="set-row"><div class="grow"><div class="t">Connected</div><div class="d">${esc(SV.google.email||"Google account")}</div></div><button class="btn sm" id="gDisc">Disconnect</button></div>`
           :`<div class="set-row"><div class="grow"><div class="t">Connect Google Calendar</div><div class="d">Every follow-up becomes a calendar event with a reminder.</div></div><a class="btn primary sm" href="/api/google/connect">Connect</a></div>`}
-        <label class="set-row"><div class="grow"><div class="t">Add follow-ups to Google Calendar</div><div class="d">Events move when you change a date, and disappear when a deal closes</div></div>
+        <div ${HID}><label class="set-row"><div class="grow"><div class="t">Add follow-ups to Google Calendar</div><div class="d">Events move when you change a date, and disappear when a deal closes</div></div>
           <span class="switch"><input type="checkbox" id="calOn" ${settings.calendar.enabled?"checked":""}><span></span></span></label>
         <label class="set-row"><div class="grow"><div class="t">Remind me</div><div class="d">For phone notifications and Calendar</div></div>
           <select class="select-pill" id="calRem">${[[0,"At the time"],[5,"5 min before"],[10,"10 min before"],[30,"30 min before"],[60,"1 hour before"]].map(([v,l])=>`<option value="${v}" ${Number(settings.calendar.reminder)===v?"selected":""}>${l}</option>`).join("")}</select></label>
         <label class="set-row"><div class="grow"><div class="t">Event length</div></div>
-          <select class="select-pill" id="calDur">${[[15,"15 min"],[30,"30 min"],[60,"1 hour"]].map(([v,l])=>`<option value="${v}" ${Number(settings.calendar.duration)===v?"selected":""}>${l}</option>`).join("")}</select></label>
+          <select class="select-pill" id="calDur">${[[15,"15 min"],[30,"30 min"],[60,"1 hour"]].map(([v,l])=>`<option value="${v}" ${Number(settings.calendar.duration)===v?"selected":""}>${l}</option>`).join("")}</select></label></div>
+        ${multi()?`<div class="set-row"><div class="grow d">Events go into the calendar of the person who owns the lead. Each person connects their own Google account here.</div></div>`:""}
       </div>
     </section>
 
     <section class="set-sec"><h2>Phone notifications</h2>
       <div class="card">
         <div class="set-row"><div class="grow"><div class="t">This device</div><div class="d" id="pushD">Checking…</div></div><button class="btn sm" id="pushBtn" hidden></button></div>
-        <label class="set-row"><div class="grow"><div class="t">Morning summary</div><div class="d">One notification with the day's follow-ups</div></div>
+        <label class="set-row" ${HID}><div class="grow"><div class="t">Morning summary</div><div class="d">One notification with the day's follow-ups</div></div>
           <select class="select-pill" id="digest">${[[-1,"Off"],[7,"7:00 AM"],[8,"8:00 AM"],[9,"9:00 AM"],[10,"10:00 AM"],[11,"11:00 AM"]].map(([v,l])=>`<option value="${v}" ${Number(settings.digestHour??9)===v?"selected":""}>${l}</option>`).join("")}</select></label>
         <div class="set-row"><div class="grow d">${SV.push?.devices||0} device${SV.push?.devices===1?"":"s"} get reminders. On iPhone, open the app from its Home Screen icon to turn them on (iOS 16.4 or later).</div><button class="btn sm" id="pushTest">Send test</button></div>
       </div>
@@ -1013,10 +1090,10 @@ function renderPrefs(m){
       </div>
     </section>
 
-    ${dupeGroups().length?`<section class="set-sec"><h2>Possible duplicates</h2><div class="card">
+    ${dupeGroups().length&&A?`<section class="set-sec"><h2>Possible duplicates</h2><div class="card">
       ${dupeGroups().map(g=>`<div class="set-row"><div class="grow"><div class="t num">${esc(g[0].phone)}</div><div class="chips wrap" style="margin-top:6px">${g.map(l=>`<button class="chip" data-open="${esc(l.id)}">${esc(l.name)} · ${esc(statusLabel(l.status))}</button>`).join("")}</div></div></div>`).join("")}
       <div class="set-row"><div class="grow d">These leads share a phone number. Open one, copy anything useful into the other, then delete the extra.</div></div></div></section>`:""}
-    <section class="set-sec"><h2>Backup</h2>
+    <section class="set-sec" ${HID}><h2>Backup</h2>
       <div class="card">
         <div class="set-row"><div class="grow"><div class="t">Export everything to Excel</div><div class="d">${settings.lastBackupAt?"Last backup: "+esc(whenStr(settings.lastBackupAt)):"No backup yet"} · ${leads.length} leads</div></div>
           <button class="btn primary" id="expBtn">${ic("down")}Export</button></div>
@@ -1027,6 +1104,7 @@ function renderPrefs(m){
 
     <section class="set-sec"><h2>Account</h2>
       <div class="card">
+        <div class="set-row"><span class="act-av">${esc(initials(ME().name))}</span><div class="grow"><div class="t">${esc(ME().name)}</div><div class="d">Signed in as ${esc(ME().username||"")} · ${A?"Admin":"Team member"}</div></div></div>
         <form class="set-row" id="pwForm" style="flex-wrap:wrap"><input class="input" id="pwCur" type="password" placeholder="Current password" autocomplete="current-password" style="flex:1;min-width:140px"><input class="input" id="pwNew" type="password" placeholder="New password, 8+ characters" autocomplete="new-password" minlength="8" style="flex:1;min-width:140px"><button class="btn" type="submit">Change password</button></form>
         <div class="set-row"><div class="grow"><div class="t">Sign out of this device</div></div><button class="btn sm danger" id="logout">Sign out</button></div>
       </div>
@@ -1071,7 +1149,13 @@ function renderPrefs(m){
   })();
   $("#pushTest").onclick=async()=>{try{const r=await LD.api("POST","/api/push/test");toast(r.sent?`Sent to ${r.sent} device${r.sent===1?"":"s"}`:"No device has notifications on yet.");}catch(e){toast(e.message);}};
   $("#digest").onchange=e=>saveSettings({digestHour:Number(e.target.value)});
-  $("#speechLang").value=settings.speechLang||"en-IN"; $("#speechLang").onchange=e=>saveSettings({speechLang:e.target.value});
+  $("#speechLang").value=speechLang(); $("#speechLang").onchange=e=>{try{localStorage.setItem("ld.speech",e.target.value);}catch{} toast("Speech language saved on this device");};
+  wireTeam();
+  const uf=$("#userForm"); if(uf) uf.onsubmit=async e=>{e.preventDefault(); const b=uf.querySelector("button[type=submit]"); b.disabled=true;
+    try{ const r=await LD.api("POST","/api/users",{name:$("#nuName").value,username:$("#nuUser").value,password:$("#nuPass").value,role:$("#nuRole").value});
+      toast(`${r.user.name} added. Username: ${r.user.username}`); ["#nuName","#nuUser","#nuPass"].forEach(x=>$(x).value=""); ui.usersFull=null; loadTeam(); }
+    catch(err){ toast(err.message||"Couldn't add that person."); }
+    b.disabled=false; };
   $("#impFile").onchange=async e=>{const f=e.target.files[0]; if(!f) return;
     try{ const j=JSON.parse(await f.text()); if(!Array.isArray(j.leads)) throw {message:"That file isn't a Lead Diary backup."};
       const r=await LD.api("POST","/api/import",{leads:j.leads,settings:j.settings}); toast(`Restored: ${r.added} new, ${r.updated} updated`); }
@@ -1081,6 +1165,38 @@ function renderPrefs(m){
     try{ await LD.api("POST","/api/password",{current:$("#pwCur").value,password:$("#pwNew").value}); toast("Password changed. Other devices were signed out."); $("#pwCur").value=""; $("#pwNew").value=""; }
     catch(err){ toast(err.message); } };
   $("#logout").onclick=()=>LD.logout();
+}
+const speechLang=()=>{try{return localStorage.getItem("ld.speech")||settings.speechLang||"en-IN";}catch{return "en-IN";}};
+/* ---- team management (admin) ---- */
+function teamHTML(){
+  const list=ui.usersFull;
+  if(!list) return `<div class="set-row"><div class="grow d">Loading the team…</div></div>`;
+  return list.map(u=>`<div class="team-row"><span class="act-av">${esc(initials(u.name))}</span>
+    <div class="grow" style="flex:1;min-width:140px"><div class="t">${esc(u.name)}${u.id===ME().id?" (you)":""}${u.active?"":' <span class="pill">Turned off</span>'}</div><div class="d">${esc(u.username)} · ${u.role==="admin"?"Admin":"Team member"}</div></div>
+    ${ui.nameFor===u.id?`<form class="split" data-nameform="${esc(u.id)}" style="flex-basis:100%"><input class="input" value="${esc(u.name)}" data-namein aria-label="Name"><button class="btn sm primary" type="submit">Save</button><button class="btn sm" type="button" data-pwcancel>Cancel</button></form>`
+      :ui.pwFor===u.id?`<form class="split" data-pwform="${esc(u.id)}" style="flex-basis:100%"><input class="input" type="password" placeholder="New password, 8+ characters" autocomplete="new-password" data-pwin><button class="btn sm primary" type="submit">Save</button><button class="btn sm" type="button" data-pwcancel>Cancel</button></form>`
+      :`<span class="chips wrap"><button class="btn sm" data-rename="${esc(u.id)}">Rename</button><button class="btn sm" data-pw="${esc(u.id)}">Reset password</button>
+      ${u.id!==ME().id?`<button class="btn sm" data-role="${esc(u.id)}">${u.role==="admin"?"Make member":"Make admin"}</button><button class="btn sm ${u.active?"danger":""}" data-act="${esc(u.id)}">${u.active?"Turn off":"Turn on"}</button>`:""}</span>`}
+  </div>`).join("");
+}
+async function loadTeam(){
+  if(!isAdminMe()) return;
+  try{ ui.usersFull=(await LD.api("GET","/api/users")).users; }catch{ ui.usersFull=ui.usersFull||[]; }
+  const el=$("#teamCard"); if(el){ el.innerHTML=teamHTML(); wireTeam(); }
+}
+function wireTeam(){
+  const el=$("#teamCard"); if(!el) return;
+  if(!ui.usersFull){ loadTeam(); return; }
+  const patch=async(id,body,msg)=>{ try{ await LD.api("PATCH","/api/users/"+encodeURIComponent(id),body); toast(msg); ui.pwFor=null; await loadTeam(); }catch(e){ toast(e.message||"Couldn't save."); } };
+  el.querySelectorAll("[data-pw]").forEach(b=>b.onclick=()=>{ui.pwFor=b.dataset.pw; el.innerHTML=teamHTML(); wireTeam(); el.querySelector("[data-pwin]")?.focus();});
+  el.querySelectorAll("[data-pwcancel]").forEach(b=>b.onclick=()=>{ui.pwFor=null; ui.nameFor=null; el.innerHTML=teamHTML(); wireTeam();});
+  el.querySelectorAll("[data-rename]").forEach(b=>b.onclick=()=>{ui.nameFor=b.dataset.rename; ui.pwFor=null; el.innerHTML=teamHTML(); wireTeam(); el.querySelector("[data-namein]")?.focus();});
+  el.querySelectorAll("[data-nameform]").forEach(f=>f.onsubmit=e=>{e.preventDefault(); ui.nameFor=null; patch(f.dataset.nameform,{name:f.querySelector("[data-namein]").value},"Name saved");});
+  el.querySelectorAll("[data-pwform]").forEach(f=>f.onsubmit=e=>{e.preventDefault(); patch(f.dataset.pwform,{password:f.querySelector("[data-pwin]").value},"Password changed. They need to sign in again.");});
+  el.querySelectorAll("[data-role]").forEach(b=>b.onclick=()=>{const u=ui.usersFull.find(x=>x.id===b.dataset.role); patch(u.id,{role:u.role==="admin"?"member":"admin"},`${u.name} is now ${u.role==="admin"?"a team member":"an admin"}`);});
+  el.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>{const u=ui.usersFull.find(x=>x.id===b.dataset.act);
+    if(u.active&&!b.dataset.armed){b.dataset.armed="1";b.textContent="Tap again to turn off";setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent="Turn off";}},4000);return;}
+    patch(u.id,{active:!u.active},u.active?`${u.name} can no longer sign in. Their leads stay.`:`${u.name} can sign in again`);});
 }
 function addCategory(name){
   const used=new Set(settings.categories.map(c=>c.slot)); let slot=0; while(used.has(slot)&&slot<8) slot++;
@@ -1097,8 +1213,8 @@ async function exportExcel(){
   const fmt=s=>s&&!isNaN(new Date(s))?new Date(s):"";
   const rows=leads.map(l=>({"Name":l.name,"Company":l.company,"Phone":l.phone,"Email":l.email,"Category":catName(l.category),"Status":statusLabel(l.status),"Temperature":l.temp,"Priority":OPEN(l.status)?PRIOS.find(x=>x.id===prioOf(l)).label:"","Priority reason":OPEN(l.status)?prioReason(l):"",
     "Source":l.source,"Requirement":l.need,...(r=>({"Modules":r.modules.join(", "),"Users":r.users,"Labs / branches":r.sites,"Using now":r.current,"Timeline":r.timeline,"Decision maker":r.decision,"Integrations":r.integrations,"Deployment":r.deploy,"Requirement details":r.details}))(reqOf(l)),"Deal value (₹)":l.value||"","Next follow-up":fmt(l.nextAt),"Added on":fmt(l.createdAt),"Last updated":fmt(l.updatedAt),
-    "Last update":lastNote(l)?`${lastNote(l).type}: ${lastNote(l).text}`:"","Number of updates":(l.notes||[]).length}));
-  const acts=[]; leads.forEach(l=>(l.notes||[]).forEach(n=>acts.push({_t:new Date(n.at).getTime()||0,"Date":fmt(n.at),"Lead":l.name,"Company":l.company,"Category":catName(l.category),"Type":n.type,"Update":n.text,"Original voice text":n.raw||""})));
+    "Last update":lastNote(l)?`${lastNote(l).type}: ${lastNote(l).text}`:"","Number of updates":(l.notes||[]).length,"Owner":uname(ownerId(l)),"Added by":l.createdBy?uname(l.createdBy):""}));
+  const acts=[]; leads.forEach(l=>(l.notes||[]).forEach(n=>acts.push({_t:new Date(n.at).getTime()||0,"Date":fmt(n.at),"Lead":l.name,"Company":l.company,"Category":catName(l.category),"Type":n.type,"Update":n.text,"By":n.by?uname(n.by):"","Original voice text":n.raw||""})));
   acts.sort((a,b)=>b._t-a._t); acts.forEach(a=>delete a._t);
   const cats=settings.categories.map(c=>({"Category":c.name,"Starred":settings.focus.includes(c.id)?"Yes":"","Leads":leads.filter(l=>l.category===c.id).length}));
   const wb=XLSX.utils.book_new();
@@ -1145,7 +1261,7 @@ function reqCardHTML(l){
   const r=reqOf(l), pr=reqProgress(l), rows=[...REQ_FIELDS.filter(f=>r[f[0]]).map(f=>[f[1],r[f[0]]]),...(r.deploy?[["Deployment",r.deploy]]:[]),...(l.value?[["Budget",inr(l.value)]]:[])];
   const empty=!l.need&&!r.modules.length&&!rows.length&&!r.details;
   return `<div class="card pad req-card">
-    <div class="req-head"><span class="label">Requirements</span><span class="req-meter num">${pr.known}/${pr.total} known</span><button class="btn sm" id="reqEdit">${ic("edit")}Edit</button></div>
+    <div class="req-head"><span class="label">Requirements</span><span class="req-meter num">${pr.known}/${pr.total} known</span>${canEdit(l)?`<button class="btn sm" id="reqEdit">${ic("edit")}Edit</button>`:""}</div>
     <div class="meter" role="img" aria-label="${pr.known} of ${pr.total} requirement details known"><i style="width:${pr.known/pr.total*100}%"></i></div>
     ${empty?`<p class="muted" style="margin:0">Nothing recorded yet. Tap Edit, or let AI pick it up from your notes.</p>`:""}
     ${l.need?`<p class="req-sum">${esc(l.need)}</p>`:""}
@@ -1153,7 +1269,7 @@ function reqCardHTML(l){
     ${rows.length?`<dl class="kv">${rows.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>`:""}
     ${r.details?`<div class="req-details">${esc(r.details)}</div>`:""}
     ${pr.missing.length&&OPEN(l.status)?`<div class="req-missing"><b>Still to ask:</b> ${esc(pr.missing.map(k=>REQ_LABEL[k]).join(", "))}</div>`:""}
-    ${sample&&(l.notes||[]).length?`<button class="btn ai sm" id="reqAI" style="align-self:flex-start">${ic("spark")}Fill from conversation</button>`:""}
+    ${sample&&(l.notes||[]).length&&canEdit(l)?`<button class="btn ai sm" id="reqAI" style="align-self:flex-start">${ic("spark")}Fill from conversation</button>`:""}
   </div>`;
 }
 async function aiFillReq(id,btn){
@@ -1234,6 +1350,7 @@ function openForm(existing){
       </div>
       <div id="dupe"></div>
       <label class="field"><span>Company</span><input class="input" id="fCompany" value="${esc(l.company)}" autocomplete="off"></label>
+      ${isAdminMe()&&multi()?`<label class="field"><span>Assign to</span><select class="input" id="fOwner">${team().map(u=>`<option value="${esc(u.id)}" ${(existing?ownerId(l):ME().id)===u.id?"selected":""}>${esc(u.name)}${u.id===ME().id?" (you)":""}</option>`).join("")}</select></label>`:""}
       <div class="field"><span>Category *</span>
         <div class="chips wrap" id="catPick">${settings.categories.map(c=>`<button type="button" class="chip" data-pick="${c.id}" aria-pressed="${l.category===c.id}"><span class="dot" style="background:${catColor(c.id)}"></span>${esc(c.name)}</button>`).join("")}
           <button type="button" class="chip" id="newCatChip">${ic("plus")}New</button></div>
@@ -1325,6 +1442,7 @@ function openForm(existing){
     const fields={name:$("#fName").value.trim(),company:$("#fCompany").value.trim(),phone:$("#fPhone").value.trim(),email:$("#fEmail").value.trim(),
       category:cat,source:$("#fSource").value.trim(),need:$("#fNeed").value.trim(),value:Number(String($("#fValue").value).replace(/[^\d.]/g,""))||null,
       temp,status:$("#fStatus").value};
+    if($("#fOwner")) fields.owner=$("#fOwner").value;
     const btn=e.submitter||$("#leadForm button[type=submit]"); btn.disabled=true;
     try{
       if(existing){
@@ -1352,7 +1470,7 @@ function wireMic(){
     const id=b.dataset.mic, ta=$("#"+id), h=$("#micHint-"+id);
     if(dictating){ const same=dictating.id===id; stopDictation(); if(same) return; }
     if(!SR){ ta.focus(); if(h) h.innerHTML=`<div class="hint">Tap the microphone key on your keyboard and speak. On a Mac, press Fn (Globe) twice. Hindi or English both work.</div>`; return; }
-    const rec=new SR(); rec.lang=settings.speechLang||"en-IN"; rec.interimResults=true; rec.continuous=true;
+    const rec=new SR(); rec.lang=speechLang(); rec.interimResults=true; rec.continuous=true;
     const base=ta.value.trim()?ta.value.replace(/\s*$/," "):""; let fin="";
     dictating={id,rec,btn:b};
     rec.onresult=e=>{ let interim="";
@@ -1376,7 +1494,7 @@ function openLead(id,{draft="",keepScroll=0,quiet=false}={}){
   const l=getLead(id); if(!l) return;
   if(!quiet){ sheetState={id,type:"Call",typeTouched:false,next:null}; opener=document.activeElement; }
   openId=id; formDirty=false; closeArmed=false; lastSheetSig=JSON.stringify(l)+(calErr[id]||"");
-  const wa=waLink(l.phone), tel=telLink(l.phone), notes=l.notes||[], last=lastNote(l);
+  const wa=waLink(l.phone), tel=telLink(l.phone), notes=l.notes||[], last=lastNote(l), E=canEdit(l), DIS=E?"":"disabled";
   const b=bucket(l);
   const G=window.LD?.server().google||{};
   const calLine=!G.connected||!settings.calendar.enabled?"":l.calErr&&l.calErr!=="retry"?`<div class="cal-state err">${ic("alert")}<span>${esc(l.calErr)}</span> <button class="btn sm" id="calRetry">Retry</button></div>`
@@ -1385,13 +1503,15 @@ function openLead(id,{draft="",keepScroll=0,quiet=false}={}){
   const inner=`
     <div class="hero"><span class="av" style="background:${catColor(l.category)}">${esc(initials(l.name))}</span>
       <div style="min-width:0"><h2>${esc(l.name||"Unnamed")}</h2><div class="co">${esc([l.company,catName(l.category)].filter(Boolean).join(" · "))}</div></div></div>
+    ${multi()?`<div class="owner-line">${ic("leads")}<span>Owner</span>${isAdminMe()?`<select class="select-pill" id="dOwner" aria-label="Owner">${team().map(u=>`<option value="${esc(u.id)}" ${ownerId(l)===u.id?"selected":""}>${esc(u.name)}${u.id===ME().id?" (you)":""}</option>`).join("")}</select>`:`<b>${esc(ownerId(l)===ME().id?"You":uname(ownerId(l)))}</b>`}
+      ${!E?`<span class="muted">· You can add updates. Only ${esc(firstName(ownerId(l)))} or an admin can change this lead.</span>`:""}</div>`:""}
     <div class="meta-row">
-      <select class="select-pill" id="dStatus" aria-label="Stage">${STATUSES.map(s=>`<option value="${s.id}" ${l.status===s.id?"selected":""}>${s.label}</option>`).join("")}</select>
-      <div class="seg" id="dTemp">${TEMPS.map(t=>`<button data-temp="${t.id}" aria-pressed="${l.temp===t.id}">${t.label}</button>`).join("")}</div>
+      <select class="select-pill" id="dStatus" aria-label="Stage" ${DIS}>${STATUSES.map(s=>`<option value="${s.id}" ${l.status===s.id?"selected":""}>${s.label}</option>`).join("")}</select>
+      <div class="seg" id="dTemp">${TEMPS.map(t=>`<button data-temp="${t.id}" aria-pressed="${l.temp===t.id}" ${DIS}>${t.label}</button>`).join("")}</div>
       ${l.value?`<span class="pill num">${inr(l.value)}</span>`:""}
     </div>
     ${OPEN(l.status)?`<div class="prio-box"><div class="prio-head"><span class="label">Priority</span>
-        <div class="seg" id="dPrio"><button data-prio="" aria-pressed="${!l.prio}">Auto${!l.prio?" · "+esc(PRIOS.find(x=>x.id===autoPrio(l).level).label):""}</button>${PRIOS.map(x=>`<button data-prio="${x.id}" aria-pressed="${l.prio===x.id}">${x.label}</button>`).join("")}</div></div>
+        <div class="seg" id="dPrio"><button data-prio="" aria-pressed="${!l.prio}" ${DIS}>Auto${!l.prio?" · "+esc(PRIOS.find(x=>x.id===autoPrio(l).level).label):""}</button>${PRIOS.map(x=>`<button data-prio="${x.id}" aria-pressed="${l.prio===x.id}" ${DIS}>${x.label}</button>`).join("")}</div></div>
       <div class="prio-why"><span class="pdot ${prioOf(l)}"></span>${esc(prioReason(l))}</div></div>`:""}
     <div class="recency">${last?`Last contact ${esc(agoStr(last.at))}`:"Not contacted yet"} · added ${esc(agoStr(l.createdAt))}${l.source?" from "+esc(l.source):""}</div>
     ${l.phone?`<div class="card pad"><div class="phone-line"><span class="num">${esc(l.phone)}</span><button class="btn sm" id="copyPh">${ic("copy")}Copy</button></div></div>`:""}
@@ -1399,8 +1519,8 @@ function openLead(id,{draft="",keepScroll=0,quiet=false}={}){
     ${OPEN(l.status)?`<div class="card pad fu">
       <span class="label">Next follow-up</span>
       <div class="fu-when"><b class="${b==="over"?"due over":b==="today"?"due today":""}" style="font-size:18px">${l.nextAt?esc(whenStr(l.nextAt)):"Not set"}</b>${b==="over"?`<span class="pill" style="background:var(--red-soft);color:var(--red)">${esc(dueStr(l.nextAt))}</span>`:""}</div>
-      <div class="chips">${QUICK().map(([k,t])=>`<button class="chip" data-fq="${k}">${t}</button>`).join("")}
-        ${l.nextAt?`<button class="chip" data-fq="clear">Clear</button>`:""}</div>
+      ${E?`<div class="chips">${QUICK().map(([k,t])=>`<button class="chip" data-fq="${k}">${t}</button>`).join("")}
+        ${l.nextAt?`<button class="chip" data-fq="clear">Clear</button>`:""}</div>`:`<p class="muted" style="margin:0;font-size:13px">${esc(firstName(ownerId(l)))} sets this lead's follow-ups.</p>`}
       <input class="input" id="dNext" type="datetime-local" value="${esc(l.nextAt)}" aria-label="Pick date and time">
       ${calLine}
     </div>`:""}
@@ -1411,7 +1531,7 @@ function openLead(id,{draft="",keepScroll=0,quiet=false}={}){
         <button class="mic" type="button" data-mic="upd" aria-label="Speak">${ic("mic")}</button></div>
       <div id="micHint-upd"></div>
       <div class="chips" id="typePick">${NOTE_TYPES.map(t=>`<button class="chip" data-type="${t}" aria-pressed="${sheetState.type===t}">${t}</button>`).join("")}</div>
-      ${OPEN(l.status)?`<div class="quick"><button class="btn sm" data-quick="noans">${ic("phone")}No answer, retry tomorrow</button><button class="btn sm" data-quick="sent">${ic("wa")}Sent details, follow up in 2 days</button></div>`:""}
+      ${OPEN(l.status)&&E?`<div class="quick"><button class="btn sm" data-quick="noans">${ic("phone")}No answer, retry tomorrow</button><button class="btn sm" data-quick="sent">${ic("wa")}Sent details, follow up in 2 days</button></div>`:""}
       <div class="split">${sample?`<button class="btn primary" id="saveAI">${ic("spark")}Save with AI</button><button class="btn" id="savePlain">Save as is</button>`:`<button class="btn primary" id="savePlain">Save update</button>`}</div>
       ${sample?`<p class="sub" style="margin:0;font-size:12.5px">Save with AI cleans up your words, and sets the stage and next follow-up if you mention them.</p>`:""}
     </div>
@@ -1422,17 +1542,17 @@ function openLead(id,{draft="",keepScroll=0,quiet=false}={}){
         <div class="seg" id="langSeg">${["English","Hinglish"].map(x=>`<button data-lang="${x}" aria-pressed="${msgLang()===x}">${x}</button>`).join("")}</div></div>
       <button class="btn ai" id="nextAI" style="height:44px">${ic("spark")}Suggest next step and a message</button><div id="nextOut"></div></div>`:""}
     <div class="card pad"><span class="label">History · ${notes.length}</span>
-      ${notes.length?`<ol class="timeline" style="margin-top:12px">${notes.map(n=>`<li><span class="pt"></span><div><div class="th"><b>${esc(n.type)}</b><span class="muted">${esc(whenStr(n.at))}</span></div>${n.text?`<p>${esc(n.text)}</p>`:""}
+      ${notes.length?`<ol class="timeline" style="margin-top:12px">${notes.map(n=>`<li><span class="pt"></span><div><div class="th"><b>${esc(n.type)}</b>${n.by&&multi()?`<span class="by">${esc(n.by===ME().id?"You":uname(n.by))}</span>`:""}<span class="muted">${esc(whenStr(n.at))}</span></div>${n.text?`<p>${esc(n.text)}</p>`:""}
         ${n.raw?`<details><summary>What you said</summary>${esc(n.raw)}</details>`:""}</div></li>`).join("")}</ol>`:`<p class="muted" style="margin:8px 0 0">No updates yet. Log your first conversation above.</p>`}
     </div>
 
-    <div class="card pad"><div style="display:flex;justify-content:space-between;align-items:center"><span class="label">Details</span><button class="btn sm" id="editBtn">${ic("edit")}Edit</button></div>
+    <div class="card pad"><div style="display:flex;justify-content:space-between;align-items:center"><span class="label">Details</span>${E?`<button class="btn sm" id="editBtn">${ic("edit")}Edit</button>`:""}</div>
       <dl class="kv" style="margin:12px 0 0">
         <dt>Source</dt><dd>${esc(l.source||"–")}</dd>
         ${l.email?`<dt>Email</dt><dd>${esc(l.email)}</dd>`:""}
-        <dt>Added</dt><dd>${esc(whenStr(l.createdAt)||"–")}</dd>
+        <dt>Added</dt><dd>${esc(whenStr(l.createdAt)||"–")}${l.createdBy&&multi()?" by "+esc(l.createdBy===ME().id?"you":uname(l.createdBy)):""}</dd>
       </dl></div>
-    <button class="btn danger" id="delBtn" style="height:44px">${ic("trash")}Delete lead</button>`;
+    ${isAdminMe()?`<button class="btn danger" id="delBtn" style="height:44px">${ic("trash")}Delete lead</button>`:""}`;
   const dock=`<div class="dock">${wa?`<a class="btn wa" href="${wa}" target="_blank" rel="noopener">${ic("wa")}WhatsApp</a>`:`<button class="btn" disabled>${ic("wa")}WhatsApp</button>`}
     ${tel?`<a class="btn" href="${tel}">${ic("phone")}Call</a>`:`<button class="btn" disabled>${ic("phone")}Call</button>`}
     <button class="btn primary" id="dockLog">${ic("mic")}Log update</button></div>`;
@@ -1446,7 +1566,10 @@ function openLead(id,{draft="",keepScroll=0,quiet=false}={}){
     const cur=getLead(id); if(!cur) return false;
     const p={...patch};
     if(p.status&&p.status!==cur.status&&!OPEN(p.status)){p.closedAt=new Date().toISOString();p.nextAt="";}
-    try{ await patchLead(id,p); if(msg) toast(msg); if("nextAt" in p||"status" in p) queueCal(id); return true; }
+    try{ const dropped=await patchLead(id,p);
+      if(dropped.length) toast(p.notes?`Update saved. Only ${firstName(ownerId(cur))} or an admin can change this lead's stage and follow-up.`:`Only ${firstName(ownerId(cur))} or an admin can change this lead.`);
+      else if(msg) toast(msg);
+      return true; }
     catch(e){ toast("Couldn't save. Check your connection and try again."); return false; }
   };
   $("#dStatus").onchange=e=>save({status:e.target.value},`Stage: ${statusLabel(e.target.value)}`);
@@ -1513,11 +1636,12 @@ Reply with only JSON: {"summary":"one sentence on where this lead stands","next"
     }catch(e){ const o=$("#nextOut"); if(o) o.innerHTML=`<p class="muted">${esc(aiErr(e))}</p>`; }
     if(na.isConnected) na.disabled=false;
   };
-  $("#editBtn").onclick=()=>openForm(getLead(id)||l);
-  $("#reqEdit").onclick=()=>openReq(id);
+  const eb=$("#editBtn"); if(eb) eb.onclick=()=>openForm(getLead(id)||l);
+  const re=$("#reqEdit"); if(re) re.onclick=()=>openReq(id);
+  const dow=$("#dOwner"); if(dow) dow.onchange=e=>save({owner:e.target.value},`Assigned to ${uname(e.target.value)}`);
   const ra=$("#reqAI"); if(ra) ra.onclick=()=>aiFillReq(id,ra);
   const del=$("#delBtn");
-  del.onclick=async()=>{
+  if(del) del.onclick=async()=>{
     if(!del.dataset.armed){del.dataset.armed="1";del.innerHTML=`${ic("trash")}Tap again to delete ${esc(l.name)}`;setTimeout(()=>{if(del.isConnected){delete del.dataset.armed;del.innerHTML=`${ic("trash")}Delete lead`;}},4000);return;}
     try{
       await calQ[id]; const cur=getLead(id)||l; let warn=false;
@@ -1543,8 +1667,12 @@ document.addEventListener("keydown",e=>{
   if(e.target.closest?.("[data-stop]")) return;
   const o=e.target.closest?.("[data-open]"); if(o&&!o.closest("#sheetRoot")&&(e.key==="Enter"||e.key===" ")){e.preventDefault();openLead(o.dataset.open);}
 });
-document.addEventListener("focusin",()=>document.body.classList.toggle("kb",typingIn("body")));
-document.addEventListener("focusout",()=>setTimeout(()=>document.body.classList.toggle("kb",typingIn("body")),0));
+/* hide the tab bar while the keyboard is up; bring it back only after the tap that ended typing has finished,
+   otherwise the bar reappears under the finger and steals the tap */
+let kbTimer;
+const syncKb=()=>{ clearTimeout(kbTimer); if(typingIn("body")) document.body.classList.add("kb"); else kbTimer=setTimeout(()=>{ if(!typingIn("body")) document.body.classList.remove("kb"); },350); };
+document.addEventListener("focusin",syncKb);
+document.addEventListener("focusout",()=>setTimeout(syncKb,0));
 // tooltip for charts
 const tip=$("#tip");
 document.addEventListener("pointerup",e=>{ if(e.pointerType==="touch"){clearTimeout(tip.t);tip.t=setTimeout(()=>tip.hidden=true,1600);} });
@@ -1579,6 +1707,7 @@ renderAll();
   col.onSnapshot(s=>onLeads(s.docs.map(d=>({id:d.id,...d.data()}))),
     err=>{ loadErr=`Couldn't load your leads (${err.code}). Reload the page to try again.`; loaded=true; renderAll(); });
   renderAll();
+  window.LD?.onActivity(item=>{ ui.act=[item,...(ui.act||[])].slice(0,200); const el=$("#actList"); if(el) el.innerHTML=actListHTML(); });
   window.LD?.onServer(()=>{ requestRender(); if(openId&&!openId.startsWith("__")){ lastSheetSig=""; renderSheet(); } });
   const openFromUrl=u=>{ try{ const id=new URL(u,location.href).searchParams.get("open"); if(!id) return;
     let tries=0; const go=()=>{ if(getLead(id)) openLead(id); else if(tries++<20) setTimeout(go,300); }; go(); }catch{} };
