@@ -79,10 +79,10 @@ fi
 
 say "Building and starting Lead Diary (first time takes a few minutes)"
 if [ "$PROXY_MODE" = caddy ]; then
-  docker compose --profile caddy up -d --build
+  docker compose --profile caddy up -d --build </dev/null
   if command -v ufw >/dev/null && ufw status | grep -q "Status: active"; then ufw allow 80/tcp >/dev/null; ufw allow 443/tcp >/dev/null; fi
 else
-  docker compose up -d --build app
+  docker compose up -d --build app </dev/null
 fi
 
 if [ "$PROXY_MODE" = nginx ]; then
@@ -106,14 +106,15 @@ server {
 EOF
   ln -sf /etc/nginx/sites-available/lead-diary /etc/nginx/sites-enabled/lead-diary
   nginx -t && systemctl reload nginx
-  command -v certbot >/dev/null || apt-get install -y -qq certbot python3-certbot-nginx
+  command -v certbot >/dev/null || apt-get install -y -qq certbot python3-certbot-nginx </dev/null
   certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos --register-unsafely-without-email --redirect \
-    || warn "HTTPS certificate failed. Check that $DOMAIN points to $IP, then run: certbot --nginx -d $DOMAIN"
+    </dev/null || warn "HTTPS certificate failed. Check that $DOMAIN points to $IP, then run: certbot --nginx -d $DOMAIN"
 fi
 
 say "Waiting for the app to start"
 for i in $(seq 1 60); do curl -fsS "http://127.0.0.1:$APP_PORT/api/session" >/dev/null 2>&1 && break; sleep 2; done
-CODE="$(docker compose exec -T app sh -c 'cat /data/setup-code.txt 2>/dev/null' || true)"
+# </dev/null: when run as "curl ... | bash", anything reading stdin would swallow the rest of this script
+CODE="$(docker compose exec -T app sh -c 'cat /data/setup-code.txt 2>/dev/null' </dev/null || true)"
 
 echo
 echo "============================================================"
