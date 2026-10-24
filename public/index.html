@@ -1462,28 +1462,38 @@ function openForm(existing){
   };
   if(!existing) setTimeout(()=>$("#raw")?.focus(),250);
 }
-const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+/* Voice input. On iPhone/iPad the browser's speech recognition is unreliable (in the Home Screen app it can stop
+   responding and freeze the page), so there the mic button hands over to the keyboard's own dictation, which is
+   Apple's and works well in Hindi and English. Elsewhere (Mac, Chrome) the browser recognizer is used, with a hard
+   stop: a second tap ends it at once, and it ends by itself after 60 seconds. */
+const IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+const SR=IOS?null:(window.SpeechRecognition||window.webkitSpeechRecognition);
 let dictating=null;
-function stopDictation(){ try{ dictating?.rec.stop(); }catch{} }
+function endDictation(){
+  const d=dictating; if(!d) return; dictating=null;
+  clearTimeout(d.timer); try{ d.rec.onresult=d.rec.onerror=d.rec.onend=null; d.rec.abort(); }catch{}
+  if(d.btn?.isConnected){ d.btn.classList.remove("rec"); d.btn.setAttribute("aria-label","Speak"); }
+  const hh=$("#micHint-"+d.id); if(hh) hh.innerHTML="";
+  if(renderDirty&&!typingIn("#main")){ renderDirty=false; renderAll(); }
+  if(openId&&!openId.startsWith("__")) renderSheet();
+}
+const stopDictation=endDictation;
 function wireMic(){
   document.querySelectorAll("[data-mic]").forEach(b=>b.onclick=()=>{
     const id=b.dataset.mic, ta=$("#"+id), h=$("#micHint-"+id);
-    if(dictating){ const same=dictating.id===id; stopDictation(); if(same) return; }
-    if(!SR){ ta.focus(); if(h) h.innerHTML=`<div class="hint">Tap the microphone key on your keyboard and speak. On a Mac, press Fn (Globe) twice. Hindi or English both work.</div>`; return; }
-    const rec=new SR(); rec.lang=speechLang(); rec.interimResults=true; rec.continuous=true;
+    if(dictating){ const same=dictating.id===id; endDictation(); if(same) return; }
+    if(!SR){ ta.focus(); if(h) h.innerHTML=`<div class="hint">${IOS?"Tap the microphone key on your keyboard (bottom right) and speak. Hindi or English both work. Tap it again when you're done.":"Use your keyboard's dictation to speak. On a Mac, press Fn (Globe) twice."}</div>`; return; }
+    let rec; try{ rec=new SR(); }catch{ ta.focus(); return; }
+    rec.lang=speechLang(); rec.interimResults=true; rec.continuous=true;
     const base=ta.value.trim()?ta.value.replace(/\s*$/," "):""; let fin="";
-    dictating={id,rec,btn:b};
+    dictating={id,rec,btn:b,timer:setTimeout(endDictation,60000)};
     rec.onresult=e=>{ let interim="";
       for(let i=e.resultIndex;i<e.results.length;i++){ const r=e.results[i]; if(r.isFinal) fin+=r[0].transcript.trim()+" "; else interim+=r[0].transcript; }
       const t=$("#"+id); if(t){ t.value=base+fin+interim; if(t.closest("#leadForm,#raw,#reqForm")||t.id==="raw") formDirty=true; } };
-    rec.onerror=e=>{ if(e.error==="not-allowed"||e.error==="service-not-allowed") toast("Allow the microphone for Lead Diary, or use the mic key on your keyboard.");
-      else if(e.error!=="aborted"&&e.error!=="no-speech") toast("Couldn't hear that. Try again."); };
-    rec.onend=()=>{ const bb=dictating?.btn; dictating=null;
-      if(bb?.isConnected){ bb.classList.remove("rec"); bb.setAttribute("aria-label","Speak"); }
-      const hh=$("#micHint-"+id); if(hh) hh.innerHTML="";
-      if(renderDirty&&!typingIn("#main")){ renderDirty=false; renderAll(); }
-      if(openId&&!openId.startsWith("__")) renderSheet(); };
-    try{ rec.start(); }catch{ dictating=null; return; }
+    rec.onerror=e=>{ if(e.error==="not-allowed"||e.error==="service-not-allowed") toast("Allow the microphone for Lead Diary, or use your keyboard's dictation.");
+      else if(e.error!=="aborted"&&e.error!=="no-speech") toast("Couldn't hear that. Try again."); endDictation(); };
+    rec.onend=endDictation;
+    try{ rec.start(); }catch{ endDictation(); ta.focus(); return; }
     b.classList.add("rec"); b.setAttribute("aria-label","Stop listening");
     if(h) h.innerHTML=`<div class="hint">Listening… speak now. Tap the mic again when you're done.</div>`;
   });
