@@ -212,6 +212,11 @@ textarea.input{resize:vertical;min-height:96px;line-height:1.45}
 @keyframes micpulse{50%{box-shadow:0 0 0 7px color-mix(in srgb,var(--red) 22%,transparent)}}
 @media (prefers-reduced-motion:reduce){.mic.rec{animation:none}}
 .mic{position:absolute;right:8px;top:8px;width:38px;height:38px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center}
+.hint.big{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;font-size:14px;border:1px solid color-mix(in srgb,var(--accent) 35%,transparent)}
+.hint.big svg.i{color:var(--accent);margin-top:2px;flex:none}
+.hint.big b{display:block;color:var(--ink);font-size:15px;margin-bottom:2px}
+.hint.big span{color:var(--ink-2)}
+textarea.input.dictate{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .hint{font-size:13px;color:var(--ink-2);background:var(--accent-soft);border-radius:10px;padding:8px 12px}
 .split{display:flex;gap:8px}
 .split .btn{flex:1;height:44px}
@@ -1478,11 +1483,21 @@ function endDictation(){
   if(openId&&!openId.startsWith("__")) renderSheet();
 }
 const stopDictation=endDictation;
+function showDictationHint(id){
+  const ta=$("#"+id), h=$("#micHint-"+id); if(!ta) return;
+  ta.focus(); ta.classList.add("dictate");
+  if(h) h.innerHTML=IOS?`<div class="hint big" role="status">${ic("mic")}<div><b>Now tap 🎤 on your keyboard</b><span>It's at the bottom of the keyboard, next to the space bar. Speak in Hindi or English, then tap it again to stop.</span></div></div>`
+    :`<div class="hint big" role="status">${ic("mic")}<div><b>Use dictation to speak</b><span>On a Mac, press the Fn (Globe) key twice, speak, then press it again.</span></div></div>`;
+  const done=()=>{ ta.classList.remove("dictate"); const hh=$("#micHint-"+id); if(hh) hh.innerHTML=""; ta.removeEventListener("blur",done); };
+  ta.addEventListener("blur",done);
+}
 function wireMic(){
+  // keep the text box focused when the mic is tapped, so the keyboard (and its dictation key) stays open
+  document.querySelectorAll("[data-mic]").forEach(b=>{ b.onpointerdown=e=>{ if(!SR) e.preventDefault(); }; b.onmousedown=e=>{ if(!SR) e.preventDefault(); }; });
   document.querySelectorAll("[data-mic]").forEach(b=>b.onclick=()=>{
     const id=b.dataset.mic, ta=$("#"+id), h=$("#micHint-"+id);
     if(dictating){ const same=dictating.id===id; endDictation(); if(same) return; }
-    if(!SR){ ta.focus(); if(h) h.innerHTML=`<div class="hint">${IOS?"Tap the microphone key on your keyboard (bottom right) and speak. Hindi or English both work. Tap it again when you're done.":"Use your keyboard's dictation to speak. On a Mac, press Fn (Globe) twice."}</div>`; return; }
+    if(!SR){ showDictationHint(id); return; }
     let rec; try{ rec=new SR(); }catch{ ta.focus(); return; }
     rec.lang=speechLang(); rec.interimResults=true; rec.continuous=true;
     const base=ta.value.trim()?ta.value.replace(/\s*$/," "):""; let fin="";

@@ -19,10 +19,16 @@ await iphone.addInitScript(() => { window.SpeechRecognition = window.webkitSpeec
 const p = await iphone.newPage(); const errs = []; p.on("pageerror", e => errs.push(e.message));
 await signIn(p, true);
 await p.click(".fab"); await sleep(300); await p.click('[data-mic="raw"]'); await sleep(200);
-ok((await p.textContent("#micHint-raw")).includes("microphone key on your keyboard"), "iPhone: mic hands over to keyboard dictation");
+ok((await p.textContent("#micHint-raw")).includes("tap 🎤 on your keyboard"), "iPhone: mic shows how to use keyboard dictation");
 ok(await p.evaluate(() => document.activeElement.id) === "raw", "iPhone: the text box is ready for dictation");
 ok(!(await p.locator(".mic.rec").count()), "iPhone: no stuck 'listening' state");
-await p.evaluate(() => document.activeElement.blur()); await p.click("#sheetX"); await sleep(300);
+await p.screenshot({ path: path.join(DATA, "iphone-mic.png") });
+// already typing, then tap the mic: the box must stay focused (keyboard stays open)
+await p.click("#raw"); await p.keyboard.type("Rahul from Apex"); await p.click('[data-mic="raw"]'); await sleep(200);
+ok(await p.evaluate(() => document.activeElement.id) === "raw", "iPhone: tapping mic while typing keeps the keyboard open");
+await p.evaluate(() => document.activeElement.blur()); await sleep(100);
+ok(!(await p.textContent("#micHint-raw")).trim(), "iPhone: the tip goes away when you're done");
+await p.click("#sheetX"); await sleep(300); await p.click("#sheetX").catch(() => {}); await sleep(300);
 ok(!(await p.locator("#leadForm").count()), "iPhone: Close works");
 // Mac/Chrome with a recognizer that never reports back
 const mac = await b.newContext({ viewport: { width: 1280, height: 800 } });
